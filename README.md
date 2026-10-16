@@ -49,7 +49,10 @@ uv run pytest            # 테스트
 | Secret | `SMTP_PASSWORD` | Google 계정 → 보안 → 2단계 인증 → **앱 비밀번호** 로 발급한 16자리 |
 | Secret | `MAIL_TO` | 받는 주소. 여러 명이면 쉼표로 구분 |
 | Secret | `ANTHROPIC_API_KEY` | (선택) 없으면 요약 없이 수집 목록만 발송 |
+| Variable | `ANTHROPIC_WORKSPACE_ID` | (선택) 키가 워크스페이스에 묶여 있지 않을 때 필요. Console → Workspaces 에서 ID 확인 |
 | Variable | `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM` | (선택) 기본값 `smtp.gmail.com`, `587`, `SMTP_USER` |
+
+요약 호출이 실패하면 경고만 남기고 요약 없는 리포트를 보냅니다. 메일이 안 오는 것보다 요약이 빠진 메일이 낫기 때문입니다.
 
 Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다. 465 포트는 SSL, 그 외는 STARTTLS 로 접속합니다.
 
