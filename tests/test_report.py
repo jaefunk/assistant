@@ -32,3 +32,13 @@ def test_write_creates_dated_file(tmp_path: Path) -> None:
     path = write("# x\n", date(2026, 10, 16), tmp_path / "out")
     assert path == tmp_path / "out" / "2026-10-16.md"
     assert path.read_text(encoding="utf-8") == "# x\n"
+
+
+def test_render_item_without_url_is_plain_text() -> None:
+    digest = InterestDigest(
+        interest=Interest(name="AI", sources=()),
+        items=[Item(title="링크 없음", url="")],
+    )
+    md = render([digest], date(2026, 1, 1))
+    assert "- 링크 없음\n" in md
+    assert "]()" not in md

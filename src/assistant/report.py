@@ -24,7 +24,8 @@ def render(digests: list[InterestDigest], report_date: date) -> str:
             continue
         for item in digest.items:
             when = f" · {item.published:%Y-%m-%d}" if item.published else ""
-            lines.append(f"- [{item.title}]({item.url}){when}")
+            label = f"[{item.title}]({item.url})" if item.url else item.title
+            lines.append(f"- {label}{when}")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
