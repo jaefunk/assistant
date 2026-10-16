@@ -10,6 +10,10 @@ on:
         description: "Claude 요약 생략 (수집만)"
         type: boolean
         default: false
+      kopis_full_sync:
+        description: "KOPIS 공연 장부 전체 동기화 (장부를 처음 만들거나 다시 맞출 때)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -34,6 +38,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
           KOPIS_API_KEY: ${{ secrets.KOPIS_API_KEY }}
+          KOPIS_FULL_SYNC: ${{ inputs.kopis_full_sync && '1' || '' }}
           SMTP_HOST: ${{ vars.SMTP_HOST }}
           SMTP_PORT: ${{ vars.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
@@ -49,7 +54,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports/
+          git add reports/ data/
           if git diff --cached --quiet; then
             echo "변경된 리포트가 없습니다."
             exit 0
