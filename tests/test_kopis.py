@@ -146,3 +146,13 @@ def test_to_item_without_detail() -> None:
 
 def test_registry_has_kopis() -> None:
     assert isinstance(get_source("kopis"), KopisSource)
+
+
+def test_http_error_includes_body() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, text="<error>stdate is invalid</error>")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = KopisSource(client=client, api_key="k", delay=0, today=date(2026, 10, 16))
+    with pytest.raises(RuntimeError, match="HTTP 400.*stdate is invalid"):
+        source.fetch(_spec(), limit=1)

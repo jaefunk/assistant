@@ -52,13 +52,17 @@ class KopisSource:
         delay: float = 0.2,
         today: date | None = None,
     ) -> None:
-        self._client = client or httpx.Client(timeout=20.0, follow_redirects=True)
+        self._client = client or httpx.Client(
+            timeout=20.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; assistant-report/0.1)"},
+        )
         self._api_key = api_key
         self._delay = delay
         self._today = today
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
-        api_key = self._api_key or os.environ.get("KOPIS_API_KEY")
+        api_key = (self._api_key or os.environ.get("KOPIS_API_KEY") or "").strip()
         if not api_key:
             raise RuntimeError("KOPIS_API_KEY 가 없어 kopis 소스를 쓸 수 없습니다.")
         if not spec.names:
@@ -135,7 +139,10 @@ class KopisSource:
             if self._delay:
                 time.sleep(self._delay)
             response = self._client.get(url, params=params)
-            response.raise_for_status()
+            if response.status_code >= 400:
+                # 서버가 400 등을 돌려줄 때 본문에 이유가 있는 경우가 많다. 로그에 남긴다.
+                body = response.text.strip().replace("\n", " ")[:300]
+                raise RuntimeError(f"kopis HTTP {response.status_code} ({url}): {body}")
             if response.text.strip():
                 return response.text
             log.warning("kopis: 빈 응답 (%s), 재시도 %d", url, attempt)
