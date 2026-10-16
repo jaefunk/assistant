@@ -68,6 +68,7 @@ def test_kopis_source_parses_names_and_genres(tmp_path: Path) -> None:
         "      - type: kopis\n"
         "        names: [손열음, 조성진]\n"
         "        genres: CCCA, CCCD\n"
+        "        areas: [서울, 경기]\n"
         "        days: 90\n"
         "        since_days: 2\n",
         encoding="utf-8",
@@ -75,4 +76,5 @@ def test_kopis_source_parses_names_and_genres(tmp_path: Path) -> None:
     spec = load_settings(cfg).interests[0].sources[0]
     assert spec.names == ("손열음", "조성진")
     assert spec.genres == ("CCCA", "CCCD")
+    assert spec.areas == ("서울", "경기")
     assert (spec.days, spec.since_days) == (90, 2)

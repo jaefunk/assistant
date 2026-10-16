@@ -55,4 +55,5 @@ jobs:
             exit 0
           fi
           git commit -m "report: $(date -u +%Y-%m-%d)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push

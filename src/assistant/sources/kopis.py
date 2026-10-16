@@ -6,6 +6,7 @@
 config 예:
     - type: kopis
       names: [손열음, 조성진]     # 공연명 또는 출연진에 이 이름이 있으면 수집
+      areas: [서울, 인천, 경기]   # 지역(area) 이 이걸로 시작하는 공연만. 비우면 전국
       genres: [CCCA, CCCD]       # 장르 코드. 기본 CCCA(클래식), CCCD(대중음악)
       days: 180                  # 오늘부터 며칠 뒤까지의 공연을 볼지
       since_days: 1              # 최근 N일 안에 등록·수정된 공연만 (afterdate)
@@ -16,7 +17,10 @@ API 메모 (가이드 v5.0 기준):
 - 상세 GET {BASE}/pblprfr/{mt20id}?service=KEY → prfcast, prfcrew, pcseguidance,
   dtguidance, relates/relate/relatenm/relateurl 등.
 - 오류도 HTTP 200 으로 오고 본문에 <returncode>, <errmsg> 가 있다.
-- 초당 10회 이상 호출하면 서비스가 중지되므로 호출 사이에 간격을 둔다.
+- 방화벽이 성공 요청 기준 분당 10회를 넘으면 'Request Blocked'(HTTP 400 HTML) 로 막고,
+  그 1분 창이 끝날 때까지 계속 막는다 (2026-10 실측). 그래서 7초 간격(분당 8~9회)을
+  두고, 막히면 30초 쉬었다가 다시 시도한다. 하루 한 번 도는 작업이라 느려도 된다.
+  python-httpx 기본 User-Agent 도 400 으로 막힌다.
 - 이용약관상 출처 표기가 의무다 (Item.attribution 으로 리포트 끝에 표시).
 """
 
@@ -39,7 +43,8 @@ BASE_URL = os.environ.get("KOPIS_BASE_URL", "http://www.kopis.or.kr/openApi/rest
 DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
-MAX_DETAIL_CALLS = 300
+MAX_DETAIL_CALLS = 60
+BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
 
@@ -49,16 +54,22 @@ class KopisSource:
         self,
         client: httpx.Client | None = None,
         api_key: str | None = None,
-        delay: float = 0.2,
+        delay: float = 7.0,
+        backoff: float = 30.0,
         today: date | None = None,
     ) -> None:
-        self._client = client or httpx.Client(timeout=20.0, follow_redirects=True)
+        self._client = client or httpx.Client(
+            timeout=20.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; assistant-report/0.1)"},
+        )
         self._api_key = api_key
         self._delay = delay
+        self._backoff = backoff
         self._today = today
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
-        api_key = self._api_key or os.environ.get("KOPIS_API_KEY")
+        api_key = (self._api_key or os.environ.get("KOPIS_API_KEY") or "").strip()
         if not api_key:
             raise RuntimeError("KOPIS_API_KEY 가 없어 kopis 소스를 쓸 수 없습니다.")
         if not spec.names:
@@ -73,6 +84,8 @@ class KopisSource:
         for genre in genres:
             for start, end in date_chunks(today, spec.days, CHUNK_DAYS):
                 for perf in self._list(api_key, start, end, genre, after):
+                    if not in_areas(spec.areas, perf.get("area", "")):
+                        continue
                     candidates.setdefault(perf.get("mt20id", ""), perf)
         candidates.pop("", None)
         log.info("kopis: 후보 %d건 (등록·수정 %s 이후)", len(candidates), after.isoformat())
@@ -131,15 +144,28 @@ class KopisSource:
         return rows[0] if rows else {}
 
     def _get(self, url: str, params: dict[str, str]) -> str:
-        for attempt in (1, 2):
+        for attempt in (1, 2, 3):
             if self._delay:
                 time.sleep(self._delay)
             response = self._client.get(url, params=params)
-            response.raise_for_status()
-            if response.text.strip():
+            body = response.text.strip()
+            if response.status_code >= 400 and BLOCKED_MARKER in body:
+                # 방화벽 차단. 잠시 쉬고 다시 시도한다.
+                log.warning(
+                    "kopis: 요청 차단됨 (%s), %.0f초 후 재시도 %d", url, self._backoff, attempt
+                )
+                if self._backoff:
+                    time.sleep(self._backoff)
+                continue
+            if response.status_code >= 400:
+                # 본문에 이유가 있는 경우가 많다. 로그에 남긴다.
+                raise RuntimeError(
+                    f"kopis HTTP {response.status_code} ({url}): {body.replace(chr(10), ' ')[:300]}"
+                )
+            if body:
                 return response.text
             log.warning("kopis: 빈 응답 (%s), 재시도 %d", url, attempt)
-        raise RuntimeError(f"kopis: 빈 응답이 반복됩니다 ({url})")
+        raise RuntimeError(f"kopis: 요청이 계속 실패합니다 ({url})")
 
 
 # --- 순수 함수 (테스트 대상) --------------------------------------------------
@@ -155,6 +181,11 @@ def date_chunks(start: date, days: int, chunk: int = CHUNK_DAYS) -> list[tuple[d
         chunks.append((cursor, stop))
         cursor = stop + timedelta(days=1)
     return chunks
+
+
+def in_areas(areas: tuple[str, ...], area: str) -> bool:
+    """areas 가 비어 있으면 전국. '서울' 은 '서울특별시' 에 맞는다."""
+    return not areas or any(area.startswith(a) for a in areas)
 
 
 def match_names(names: tuple[str, ...], *texts: str) -> list[str]:

@@ -5,7 +5,14 @@ import pytest
 
 from assistant.models import SourceSpec
 from assistant.sources import get_source
-from assistant.sources.kopis import KopisSource, date_chunks, match_names, parse_rows, to_item
+from assistant.sources.kopis import (
+    KopisSource,
+    date_chunks,
+    in_areas,
+    match_names,
+    parse_rows,
+    to_item,
+)
 
 LIST_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <dbs>
@@ -13,16 +20,22 @@ LIST_XML = """<?xml version="1.0" encoding="UTF-8"?>
     <mt20id>PF1</mt20id><prfnm>손열음 피아노 리사이틀</prfnm>
     <prfpdfrom>2026.10.18</prfpdfrom><prfpdto>2026.10.18</prfpdto>
     <fcltynm>예술의전당 콘서트홀</fcltynm><genrenm>서양음악(클래식)</genrenm>
-    <prfstate>공연예정</prfstate>
+    <area>서울특별시</area><prfstate>공연예정</prfstate>
   </db>
   <db>
     <mt20id>PF2</mt20id><prfnm>KBS교향악단 제832회 정기연주회</prfnm>
     <prfpdfrom>2026.11.28</prfpdfrom><prfpdto>2026.11.28</prfpdto>
-    <fcltynm>예술의전당 콘서트홀</fcltynm>
+    <fcltynm>예술의전당 콘서트홀</fcltynm><area>서울특별시</area>
   </db>
   <db>
     <mt20id>PF3</mt20id><prfnm>어떤 다른 공연</prfnm>
     <prfpdfrom>2026.12.01</prfpdfrom><prfpdto>2026.12.01</prfpdto><fcltynm>어딘가</fcltynm>
+    <area>경기도</area>
+  </db>
+  <db>
+    <mt20id>PF4</mt20id><prfnm>손열음 부산 리사이틀</prfnm>
+    <prfpdfrom>2026.12.05</prfpdfrom><prfpdto>2026.12.05</prfpdto><fcltynm>부산콘서트홀</fcltynm>
+    <area>부산광역시</area>
   </db>
 </dbs>"""
 
@@ -41,6 +54,7 @@ DETAILS = {
         <pcseguidance>VIP 120,000원</pcseguidance><relates></relates>
     </db></dbs>""",
     "PF3": """<dbs><db><mt20id>PF3</mt20id><prfcast>아무개</prfcast></db></dbs>""",
+    "PF4": """<dbs><db><mt20id>PF4</mt20id><prfcast>손열음</prfcast></db></dbs>""",
 }
 
 ERROR_XML = (
@@ -75,6 +89,12 @@ def test_date_chunks_cover_range_in_31_day_pieces() -> None:
     assert all((b - a).days < 31 for a, b in chunks)
 
 
+def test_in_areas_prefix_match_and_empty_means_all() -> None:
+    assert in_areas(("서울", "경기"), "서울특별시")
+    assert not in_areas(("서울", "경기"), "부산광역시")
+    assert in_areas((), "부산광역시")
+
+
 def test_match_names_ignores_spaces() -> None:
     assert match_names(("정명훈", "조성진"), "지휘 정 명훈, 협연 김선욱") == ["정명훈"]
     assert match_names(("조성진",), "아무도 없음") == []
@@ -93,10 +113,16 @@ def test_parse_rows_reads_relates() -> None:
 
 def test_fetch_matches_by_title_then_by_cast() -> None:
     requests: list[httpx.Request] = []
-    source = KopisSource(client=_client(requests), api_key="k", delay=0, today=date(2026, 10, 16))
+    source = KopisSource(
+        client=_client(requests), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
+    )
     items = source.fetch(_spec(), limit=10)
 
-    assert [i.title for i in items] == ["손열음 피아노 리사이틀", "KBS교향악단 제832회 정기연주회"]
+    assert [i.title for i in items] == [
+        "손열음 피아노 리사이틀",
+        "KBS교향악단 제832회 정기연주회",
+        "손열음 부산 리사이틀",
+    ]
     assert items[0].url == "https://tickets.interpark.com/1"
     assert "출연 손열음" in items[0].details
     assert "R석 120,000원" in items[0].details
@@ -115,24 +141,38 @@ def test_fetch_matches_by_title_then_by_cast() -> None:
     assert params["shcate"] == "CCCA"
     assert params["stdate"] == "20261016"
     assert params["service"] == "k"
-    # 상세는 PF1(제목 일치), PF2, PF3 각 1회
-    assert sum(1 for r in requests if not r.url.path.endswith("/pblprfr")) == 3
+    # 상세는 PF1(제목 일치), PF2, PF3, PF4 각 1회
+    assert sum(1 for r in requests if not r.url.path.endswith("/pblprfr")) == 4
+
+
+def test_fetch_filters_by_area() -> None:
+    source = KopisSource(
+        client=_client([]), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
+    )
+    items = source.fetch(_spec(areas=("서울", "인천", "경기")), limit=10)
+    assert [i.title for i in items] == ["손열음 피아노 리사이틀", "KBS교향악단 제832회 정기연주회"]
 
 
 def test_fetch_respects_limit() -> None:
-    source = KopisSource(client=_client([]), api_key="k", delay=0, today=date(2026, 10, 16))
+    source = KopisSource(
+        client=_client([]), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
+    )
     assert len(source.fetch(_spec(), limit=1)) == 1
 
 
 def test_fetch_without_key_raises(monkeypatch) -> None:
     monkeypatch.delenv("KOPIS_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="KOPIS_API_KEY"):
-        KopisSource(client=_client([]), delay=0).fetch(_spec(), limit=1)
+        KopisSource(client=_client([]), delay=0, backoff=0).fetch(_spec(), limit=1)
 
 
 def test_fetch_error_response_raises() -> None:
     source = KopisSource(
-        client=_client([], list_xml=ERROR_XML), api_key="bad", delay=0, today=date(2026, 10, 16)
+        client=_client([], list_xml=ERROR_XML),
+        api_key="bad",
+        delay=0,
+        backoff=0,
+        today=date(2026, 10, 16),
     )
     with pytest.raises(RuntimeError, match="kopis 오류 02"):
         source.fetch(_spec(), limit=1)
@@ -146,3 +186,31 @@ def test_to_item_without_detail() -> None:
 
 def test_registry_has_kopis() -> None:
     assert isinstance(get_source("kopis"), KopisSource)
+
+
+def test_http_error_includes_body() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, text="<error>stdate is invalid</error>")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = KopisSource(client=client, api_key="k", delay=0, backoff=0, today=date(2026, 10, 16))
+    with pytest.raises(RuntimeError, match="HTTP 400.*stdate is invalid"):
+        source.fetch(_spec(), limit=1)
+
+
+def test_blocked_response_is_retried() -> None:
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(400, text="<HTML><H1>Request Blocked</H1></HTML>")
+        if request.url.path.endswith("/pblprfr"):
+            return httpx.Response(200, text=LIST_XML)
+        return httpx.Response(200, text=DETAILS[request.url.path.rsplit("/", 1)[-1]])
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = KopisSource(client=client, api_key="k", delay=0, backoff=0, today=date(2026, 10, 16))
+    items = source.fetch(_spec(), limit=10)
+    assert len(items) == 3
+    assert calls["n"] >= 2

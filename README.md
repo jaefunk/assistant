@@ -65,7 +65,7 @@ Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다.
 | --- | --- | --- |
 | `rss` | `url` | RSS/Atom 피드에서 최신 항목을 가져옵니다 |
 | `claude_search` | `query`, `days`(기본 7) | Claude 가 웹을 검색해 최근 `days`일 이내 글을 직접 골라옵니다. `ANTHROPIC_API_KEY` 필요 |
-| `kopis` | `names`, `genres`(기본 클래식·대중음악), `days`(앞으로 며칠, 기본 7), `since_days`(기본 1) | 공연예술통합전산망에서 `names` 의 사람이 출연하는 공연 중 최근 `since_days`일 안에 등록·수정된 것을 가져옵니다. `KOPIS_API_KEY` 필요 |
+| `kopis` | `names`, `genres`(기본 클래식·대중음악), `areas`(지역, 비우면 전국), `days`(앞으로 며칠, 기본 7), `since_days`(기본 1) | 공연예술통합전산망에서 `names` 의 사람이 출연하는 공연 중 최근 `since_days`일 안에 등록·수정된 것을 가져옵니다. `KOPIS_API_KEY` 필요 |
 
 ```yaml
 interests:
@@ -83,13 +83,14 @@ interests:
     sources:
       - type: kopis
         names: [손열음, 조성진, 정명훈]
+        areas: [서울, 인천, 경기]
         days: 180
         since_days: 1
 ```
 
 `kopis` 는 국내에서 티켓을 파는 공연이 의무 등록되는 전산망을 보므로 국내 공연은 거의 빠짐없이 잡힙니다. 해외 공연은 없습니다.
 키는 [kopis.or.kr](https://www.kopis.or.kr) 오픈API 신청으로 무료 발급받아 Secret `KOPIS_API_KEY` 로 등록하세요.
-초당 10회 넘게 부르면 차단되므로 호출 사이에 0.2초를 둡니다. 장르 코드: `CCCA` 클래식, `CCCD` 대중음악, `CCCC` 국악, `GGGA` 뮤지컬, `AAAA` 연극, `BBBC` 무용.
+방화벽이 분당 10회 넘는 호출을 막으므로 호출 사이에 7초를 둡니다. 하루 한 번이라 수 분 걸려도 괜찮습니다. 장르 코드: `CCCA` 클래식, `CCCD` 대중음악, `CCCC` 국악, `GGGA` 뮤지컬, `AAAA` 연극, `BBBC` 무용.
 
 `claude_search` 는 관심사마다 Claude 호출 한 번에 웹 검색을 최대 6회 씁니다. 웹 검색은 검색 1,000회당 $10 과 토큰 비용이 듭니다.
 검색 실패나 API 오류는 경고만 남기고 다른 소스로 계속 진행합니다.
