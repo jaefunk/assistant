@@ -13,7 +13,7 @@ GitHub Actions 로 정기 실행되는 관심사 정보 리포트 서비스. Pyt
 
 - `config/interests.yaml` : 관심사와 소스 정의
 - `src/assistant/config.py` : 설정 로딩
-- `src/assistant/sources/` : 수집기. `REGISTRY` 에 type 이름으로 등록. `rss`(url), `claude_search`(query, Claude 웹 검색), `kopis`(names, 공연전산망. `KOPIS_API_KEY` 필요)
+- `src/assistant/sources/` : 수집기. `REGISTRY` 에 type 이름으로 등록. `rss`(url), `claude_search`(query, Claude 웹 검색), `kopis`(names, 공연전산망. `KOPIS_API_KEY` 필요. `data/kopis_performances.json` 장부를 증분 동기화)
 - `src/assistant/claude.py` : Anthropic 클라이언트 생성 (API 키, 워크스페이스 헤더). summarizer 와 claude_search 가 공유
 - `src/assistant/collector.py` : 관심사별 수집 (소스 하나가 실패해도 계속 진행)
 - `src/assistant/summarizer.py` : Claude 요약. `ANTHROPIC_API_KEY` 없으면 건너뛰고, API 실패는 경고만 남김

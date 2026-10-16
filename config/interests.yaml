@@ -5,8 +5,8 @@
 #   rss           : url 의 RSS/Atom 피드에서 가져옵니다.
 #   claude_search : Claude 가 웹을 검색해 query 에 맞는 글을 직접 골라옵니다.
 #                   days 로 "최근 며칠 이내" 를 정합니다 (기본 7).
-#   kopis         : 공연예술통합전산망(KOPIS)에서 names 의 사람이 출연하는 공연 중
-#                   최근 since_days 일 안에 등록·수정된 것을 가져옵니다. KOPIS_API_KEY 필요.
+#   kopis         : 공연예술통합전산망(KOPIS) 공연 장부(data/)를 증분 동기화해 names 의 사람이
+#                   출연하는 공연 중 새로 올라오거나 바뀐 것을 가져옵니다. KOPIS_API_KEY 필요.
 interests:
   - name: AI / LLM
     sources:
@@ -28,7 +28,7 @@ interests:
         genres: [CCCA, CCCD]   # 클래식, 대중음악
         areas: [서울, 인천, 경기] # 수도권 공연만
         days: 180              # 앞으로 6개월치 공연 중
-        since_days: 1          # 어제 이후 등록·수정된 것만
+        since_days: 1          # 증분 동기화 때 마지막 동기화일에서 하루를 겹쳐 받음
 
 # 각 소스에서 최대 몇 개 항목을 가져올지
 max_items_per_source: 10
