@@ -29,9 +29,6 @@ interests:
         areas: [서울, 인천, 경기] # 수도권 공연만
         days: 180              # 앞으로 6개월치 공연 중
         since_days: 1          # 어제 이후 등록·수정된 것만
-      - type: claude_search
-        query: 손열음 조성진 백건우 정명훈 송하예 이예준 신예영 정승환 서울·인천·경기 공연 티켓 오픈 또는 새 공연 발표
-        days: 2
 
 # 각 소스에서 최대 몇 개 항목을 가져올지
 max_items_per_source: 10
