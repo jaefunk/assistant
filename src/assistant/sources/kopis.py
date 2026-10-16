@@ -8,6 +8,8 @@
 - 장부가 있으면 마지막 동기화일 - since_days 이후 등록·수정된 공연만 받는다 (afterdate).
 - 처음 보는 공연만 상세(출연진)를 조회한다. 하루 상한을 넘기면 '미확인' 으로 남겨
   다음 실행에서 이어서 처리한다. 끝난 공연은 장부에서 지운다.
+- 확인한 공연은 출연진 텍스트(cast)도 장부에 남긴다. names 가 바뀌면 API 호출 없이 다시 대조해
+  새로 맞는 공연은 상세를 다시 받아 보고 대기로 올린다.
 - names 가 출연하는 공연이 새로 잡히거나 바뀌면 장부에 '보고 대기(pending_report)' 로 표시하고,
   리포트 실행(fetch)이 그것들을 싣고 표시를 지운다. 동기화 전용 실행(sync)은 장부만 맞추므로
   새벽에 찾은 공연도 아침 메일에 실린다.
@@ -146,6 +148,7 @@ class KopisSource:
 
         store = load_store(self._store_path, today)
         performances: dict[str, dict] = store["performances"]
+        rematch(performances, spec.names)
         full_sync = self._full_sync
         if full_sync is None:
             full_sync = os.environ.get("KOPIS_FULL_SYNC", "") == "1" or not store.get("last_sync")
@@ -209,6 +212,7 @@ class KopisSource:
                     str(detail.get("prfcrew", "")),
                 )
                 entry["checked"] = today.isoformat()
+                entry["cast"] = f"{detail.get('prfcast', '')} / {detail.get('prfcrew', '')}"
                 entry["matched"] = matched
                 entry["detail"] = detail if matched else None
                 if matched:
@@ -324,6 +328,34 @@ def load_store(path: Path | None, today: date) -> dict:
             if isinstance(v, dict) and (not v.get("prfpdto") or v["prfpdto"] >= cutoff)
         }
     return store
+
+
+def rematch(performances: dict[str, dict], names: tuple[str, ...]) -> int:
+    """names 가 바뀌었을 때 저장된 출연진 텍스트로 다시 대조한다.
+
+    새로 맞게 된 공연은 상세(가격·예매처)가 없으므로 '미확인' 으로 되돌려 다시 조회하게 한다.
+    출연진 텍스트가 없는 옛 항목도 미확인으로 되돌린다. 되돌린 건수를 돌려준다.
+    """
+    reverted = 0
+    for entry in performances.values():
+        if "checked" not in entry:
+            continue
+        if "cast" not in entry:
+            entry.pop("checked")
+            reverted += 1
+            continue
+        new = match_names(names, entry.get("prfnm", ""), entry["cast"])
+        old = entry.get("matched", [])
+        if new == old:
+            continue
+        if any(n not in old for n in new):
+            entry.pop("checked")  # 새로 맞는 이름이 생김 → 상세를 다시 받는다
+            reverted += 1
+        else:
+            entry["matched"] = new  # 이름이 빠진 경우: 상세는 그대로, 맞는 이름만 줄인다
+    if reverted:
+        log.info("kopis: 이름 목록 변경으로 %d건을 다시 확인합니다.", reverted)
+    return reverted
 
 
 def save_store(path: Path | None, store: dict) -> None:

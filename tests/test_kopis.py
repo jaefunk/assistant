@@ -425,3 +425,61 @@ def test_ticket_open_lookup_no_info_is_empty(tmp_path) -> None:
         _spec(), limit=10
     )
     assert "티켓 오픈" not in _news(items)[0].details
+
+
+# --- 이름 목록 변경 ---------------------------------------------------------------
+
+
+def test_new_name_rematches_from_stored_cast(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+    first: list[httpx.Request] = []
+    items = _source(_client(first), store_path=store_path).fetch(_spec(names=("손열음",)), limit=10)
+    assert [i.title for i in _news(items)] == ["손열음 피아노 리사이틀", "손열음 부산 리사이틀"]
+    store = json.loads(store_path.read_text(encoding="utf-8"))
+    assert store["performances"]["PF2"]["cast"].startswith("정 명훈")
+    assert store["performances"]["PF2"]["matched"] == []
+
+    # 정명훈 추가: 저장된 출연진으로 PF2 만 다시 상세를 받아 보고한다
+    second: list[httpx.Request] = []
+    items = _source(
+        _client(second, list_xml="<dbs></dbs>"), store_path=store_path, today=date(2026, 10, 17)
+    ).fetch(_spec(names=("손열음", "정명훈")), limit=10)
+    assert _detail_requests(second) == ["PF2"]
+    assert [i.title for i in _news(items)] == ["KBS교향악단 제832회 정기연주회"]
+
+
+def test_removed_name_shrinks_matched_without_calls(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+    _source(_client([]), store_path=store_path).fetch(_spec(), limit=10)
+    requests: list[httpx.Request] = []
+    items = _source(
+        _client(requests, list_xml="<dbs></dbs>"), store_path=store_path, today=date(2026, 10, 17)
+    ).fetch(_spec(names=("손열음",)), limit=10)
+    assert _detail_requests(requests) == []
+    assert [i.title for i in _standing(items)] == ["손열음 피아노 리사이틀", "손열음 부산 리사이틀"]
+
+
+def test_legacy_entry_without_cast_is_rechecked(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+    store_path.write_text(
+        json.dumps(
+            {
+                "last_sync": "2026-10-15",
+                "performances": {
+                    "PF2": {
+                        "prfnm": "KBS교향악단 제832회 정기연주회",
+                        "prfpdto": "2026.11.28",
+                        "checked": "2026-10-15",
+                        "matched": [],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    requests: list[httpx.Request] = []
+    items = _source(_client(requests, list_xml="<dbs></dbs>"), store_path=store_path).fetch(
+        _spec(), limit=10
+    )
+    assert _detail_requests(requests) == ["PF2"]
+    assert [i.title for i in _news(items)] == ["KBS교향악단 제832회 정기연주회"]

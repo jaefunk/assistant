@@ -8,24 +8,11 @@
 #   kopis         : 공연예술통합전산망(KOPIS) 공연 장부(data/)를 증분 동기화해 names 의 사람이
 #                   출연하는 공연 중 새로 올라오거나 바뀐 것을 가져옵니다. KOPIS_API_KEY 필요.
 interests:
-  - name: AI / LLM
-    sources:
-      - type: claude_search
-        query: LLM, AI 에이전트, 주요 AI 모델 출시 소식
-        days: 7
-      - type: rss
-        url: https://hnrss.org/newest?q=LLM&points=50
-  - name: Python
-    sources:
-      - type: claude_search
-        query: Python 언어와 생태계(패키징, 주요 라이브러리 릴리스) 소식
-      - type: rss
-        url: https://planetpython.org/rss20.xml
   - name: 공연 소식
     summarize: false   # 공연은 요약 대신 목록 그대로. 예정 공연 전체도 함께 표시됨
     sources:
       - type: kopis
-        names: [손열음, 조성진, 백건우, 정명훈, 송하예, 이예준, 신예영, 정승환]
+        names: [손열음, 조성진, 백건우, 정명훈, 임윤찬, 송하예, 이예준, 신예영, 정승환]
         genres: [CCCA, CCCD]   # 클래식, 대중음악
         areas: [서울, 인천, 경기] # 수도권 공연만
         days: 180              # 앞으로 6개월치 공연 중
