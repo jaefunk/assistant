@@ -15,7 +15,7 @@
   새벽에 찾은 공연도 아침 메일에 실린다.
 - 리포트에는 그 외에 names 의 예정 공연 전체를 standing 항목(날짜순, D-day)으로 함께 준다.
 - 새로 잡힌 공연은 Claude 웹 검색 한 번으로 티켓 오픈 일시를 찾아 붙인다 (ANTHROPIC_API_KEY
-  가 있을 때만, 실행당 최대 5건).
+  가 있을 때만, 실행당 최대 10건. KOPIS 시간 예산과 무관).
 워크플로가 data/ 를 커밋하므로 장부는 날마다 이어진다. KOPIS_FULL_SYNC=1 이면 장부가
 있어도 전체 동기화를 한 번 다시 한다.
 
@@ -61,7 +61,7 @@ DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
 MAX_DETAIL_CALLS = 150
-MAX_TICKET_LOOKUPS = 5  # 실행당 티켓 오픈 일시 웹 검색 횟수
+MAX_TICKET_LOOKUPS = 10  # 실행당 티켓 오픈 일시 웹 검색 횟수
 TIME_BUDGET_SECONDS = 1500.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
 STORE_PATH = Path(os.environ.get("KOPIS_STORE_PATH", "data/kopis_performances.json"))
 BLOCKED_MARKER = "Request Blocked"
@@ -241,9 +241,8 @@ class KopisSource:
             client = make_client()
         if client is None:
             return
+        # KOPIS 가 아닌 Claude 호출이라 KOPIS 시간 예산과 무관하게 돈다 (건수 상한으로만 제한)
         for mt20id, entry in targets[: self._ticket_lookups]:
-            if self._over_budget():
-                return
             entry["ticket_open"] = lookup_ticket_open(client, entry)
             log.info("kopis: 티켓 오픈 검색 %s → %s", mt20id, entry["ticket_open"] or "정보 없음")
 
