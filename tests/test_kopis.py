@@ -95,6 +95,14 @@ def _detail_requests(requests: list[httpx.Request]) -> list[str]:
     return [r.url.path.rsplit("/", 1)[-1] for r in requests if not r.url.path.endswith("/pblprfr")]
 
 
+def _news(items):
+    return [i for i in items if not i.standing]
+
+
+def _standing(items):
+    return [i for i in items if i.standing]
+
+
 def _list_params(requests: list[httpx.Request]) -> list[dict[str, str]]:
     return [dict(r.url.params) for r in requests if r.url.path.endswith("/pblprfr")]
 
@@ -147,13 +155,18 @@ def test_registry_has_kopis() -> None:
 
 def test_full_sync_lists_without_afterdate_and_checks_cast() -> None:
     requests: list[httpx.Request] = []
-    items = _source(_client(requests)).fetch(_spec(), limit=10)
+    all_items = _source(_client(requests)).fetch(_spec(), limit=10)
+    items = _news(all_items)
 
     assert [i.title for i in items] == [
         "손열음 피아노 리사이틀",
         "KBS교향악단 제832회 정기연주회",
         "손열음 부산 리사이틀",
     ]
+    # 예정 공연 전체는 standing 으로 함께 온다 (공연일 포함)
+    standing = _standing(all_items)
+    assert [i.title for i in standing] == [i.title for i in items]
+    assert standing[0].event_date == date(2026, 10, 18)
     assert items[0].url == "https://tickets.interpark.com/1"
     assert "출연 손열음" in items[0].details
     assert "R석 120,000원" in items[0].details
@@ -175,12 +188,12 @@ def test_full_sync_lists_without_afterdate_and_checks_cast() -> None:
 
 
 def test_fetch_filters_by_area() -> None:
-    items = _source(_client([])).fetch(_spec(areas=("서울", "인천", "경기")), limit=10)
+    items = _news(_source(_client([])).fetch(_spec(areas=("서울", "인천", "경기")), limit=10))
     assert [i.title for i in items] == ["손열음 피아노 리사이틀", "KBS교향악단 제832회 정기연주회"]
 
 
 def test_fetch_respects_limit() -> None:
-    assert len(_source(_client([])).fetch(_spec(), limit=1)) == 1
+    assert len(_news(_source(_client([])).fetch(_spec(), limit=1))) == 1
 
 
 def test_fetch_without_key_raises(monkeypatch) -> None:
@@ -216,7 +229,7 @@ def test_blocked_response_is_retried() -> None:
         return httpx.Response(200, text=DETAILS[request.url.path.rsplit("/", 1)[-1]])
 
     items = _source(httpx.Client(transport=httpx.MockTransport(handler))).fetch(_spec(), limit=10)
-    assert len(items) == 3
+    assert len(_news(items)) == 3
     assert calls["n"] >= 2
 
 
@@ -234,7 +247,7 @@ def test_store_is_written_and_second_run_is_incremental(tmp_path) -> None:
 
     first: list[httpx.Request] = []
     items = _source(_client(first), store_path=store_path).fetch(_spec(), limit=10)
-    assert len(items) == 3
+    assert len(_news(items)) == 3
     assert _detail_requests(first) == ["PF1", "PF2", "PF3", "PF4"]
 
     store = json.loads(store_path.read_text(encoding="utf-8"))
@@ -243,6 +256,8 @@ def test_store_is_written_and_second_run_is_incremental(tmp_path) -> None:
     assert store["performances"]["PF1"]["detail"]["pcseguidance"] == "R석 120,000원"
     assert store["performances"]["PF3"]["matched"] == []
     assert store["performances"]["PF3"]["detail"] is None
+    assert store["performances"]["PF1"]["pending_report"] is False
+    assert store["performances"]["PF1"]["reported"] == "2026-10-16"
 
     # 다음 날: afterdate = last_sync - since_days, 아는 공연은 상세를 다시 부르지 않고
     # 바뀐 게 없으니 리포트할 것도 없다
@@ -250,7 +265,8 @@ def test_store_is_written_and_second_run_is_incremental(tmp_path) -> None:
     items = _source(_client(second), store_path=store_path, today=date(2026, 10, 17)).fetch(
         _spec(), limit=10
     )
-    assert items == []
+    assert _news(items) == []
+    assert len(_standing(items)) == 3
     assert _list_params(second)[0]["afterdate"] == "20261015"
     assert _detail_requests(second) == []
     assert json.loads(store_path.read_text(encoding="utf-8"))["last_sync"] == "2026-10-17"
@@ -269,21 +285,22 @@ def test_changed_known_performance_is_reported_without_detail_call(tmp_path) -> 
     items = _source(
         _client(requests, list_xml=changed), store_path=store_path, today=date(2026, 10, 17)
     ).fetch(_spec(), limit=10)
-    assert [i.title for i in items] == ["손열음 피아노 리사이틀"]
-    assert "2026.10.25" in items[0].details
+    news = _news(items)
+    assert [i.title for i in news] == ["손열음 피아노 리사이틀"]
+    assert "2026.10.25" in news[0].details
     assert _detail_requests(requests) == []
 
 
-def test_pending_performances_are_checked_on_next_run(tmp_path, monkeypatch) -> None:
-    from assistant.sources import kopis
-
-    monkeypatch.setattr(kopis, "MAX_DETAIL_CALLS", 2)
+def test_pending_performances_are_checked_on_next_run(tmp_path) -> None:
     store_path = tmp_path / "store.json"
 
     first: list[httpx.Request] = []
-    items = _source(_client(first), store_path=store_path).fetch(_spec(), limit=10)
+    items = _source(_client(first), store_path=store_path, max_detail=2).fetch(_spec(), limit=10)
     assert _detail_requests(first) == ["PF1", "PF2"]
-    assert [i.title for i in items] == ["손열음 피아노 리사이틀", "KBS교향악단 제832회 정기연주회"]
+    assert [i.title for i in _news(items)] == [
+        "손열음 피아노 리사이틀",
+        "KBS교향악단 제832회 정기연주회",
+    ]
     store = json.loads(store_path.read_text(encoding="utf-8"))
     assert "checked" not in store["performances"]["PF3"]
     assert "checked" not in store["performances"]["PF4"]
@@ -295,7 +312,7 @@ def test_pending_performances_are_checked_on_next_run(tmp_path, monkeypatch) -> 
         _client(second, list_xml=empty), store_path=store_path, today=date(2026, 10, 17)
     ).fetch(_spec(), limit=10)
     assert _detail_requests(second) == ["PF3", "PF4"]
-    assert [i.title for i in items] == ["손열음 부산 리사이틀"]
+    assert [i.title for i in _news(items)] == ["손열음 부산 리사이틀"]
 
 
 def test_full_sync_env_forces_full_listing(tmp_path, monkeypatch) -> None:
@@ -327,3 +344,84 @@ def test_load_store_drops_finished_performances(tmp_path) -> None:
     store = load_store(store_path, TODAY)
     assert set(store["performances"]) == {"NOW", "NEW"}
     assert store["last_sync"] == "2026-10-10"
+
+
+# --- 동기화 전용 실행과 보고 대기 ---------------------------------------------------
+
+
+def test_sync_keeps_pending_report_until_fetch(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+
+    # 새벽: 장부만 동기화. 맞는 공연은 보고 대기로 남는다
+    source = _source(_client([]), store_path=store_path)
+    _, store = source.sync(_spec())
+    waiting = [k for k, v in store["performances"].items() if v.get("pending_report")]
+    assert sorted(waiting) == ["PF1", "PF2", "PF4"]
+    assert "reported" not in store["performances"]["PF1"]
+
+    # 아침: 증분 목록은 비어 있어도 보고 대기 공연이 메일에 실리고 표시가 지워진다
+    requests: list[httpx.Request] = []
+    items = _source(_client(requests, list_xml="<dbs></dbs>"), store_path=store_path).fetch(
+        _spec(), limit=10
+    )
+    assert [i.title for i in _news(items)] == [
+        "손열음 피아노 리사이틀",
+        "KBS교향악단 제832회 정기연주회",
+        "손열음 부산 리사이틀",
+    ]
+    assert _detail_requests(requests) == []
+    store = json.loads(store_path.read_text(encoding="utf-8"))
+    assert not any(v.get("pending_report") for v in store["performances"].values())
+
+    # 그 다음 실행에서는 새 소식이 없고 예정 공연만 남는다
+    items = _source(_client([], list_xml="<dbs></dbs>"), store_path=store_path).fetch(
+        _spec(), limit=10
+    )
+    assert _news(items) == []
+    assert len(_standing(items)) == 3
+
+
+class _FakeClaude:
+    """티켓 오픈 검색용 가짜 클라이언트. 호출된 프롬프트를 기록한다."""
+
+    def __init__(self, answer: str) -> None:
+        self.answer = answer
+        self.prompts: list[str] = []
+        self.beta = type("B", (), {})()
+        self.beta.messages = self
+
+    def create(self, **kwargs):
+        from types import SimpleNamespace
+
+        self.prompts.append(kwargs["messages"][0]["content"])
+        return SimpleNamespace(
+            stop_reason="end_turn",
+            content=[SimpleNamespace(type="text", text=self.answer)],
+        )
+
+
+def test_ticket_open_lookup_is_attached_once(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+    claude = _FakeClaude("검색 결과입니다.\n일반 예매 2026-10-01 14:00 (인터파크)")
+    items = _source(_client([]), store_path=store_path, claude_client=claude).fetch(
+        _spec(), limit=10
+    )
+    news = _news(items)
+    assert "티켓 오픈 일반 예매 2026-10-01 14:00 (인터파크)" in news[0].details
+    assert len(claude.prompts) == 3  # 맞은 공연 3건, 각 1회
+    assert "손열음 피아노 리사이틀" in claude.prompts[0]
+
+    # 다음 실행에서는 다시 검색하지 않는다
+    claude2 = _FakeClaude("정보 없음")
+    _source(
+        _client([], list_xml="<dbs></dbs>"), store_path=store_path, claude_client=claude2
+    ).fetch(_spec(), limit=10)
+    assert claude2.prompts == []
+
+
+def test_ticket_open_lookup_no_info_is_empty(tmp_path) -> None:
+    claude = _FakeClaude("정보 없음")
+    items = _source(_client([]), store_path=tmp_path / "s.json", claude_client=claude).fetch(
+        _spec(), limit=10
+    )
+    assert "티켓 오픈" not in _news(items)[0].details

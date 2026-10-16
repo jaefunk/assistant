@@ -21,7 +21,7 @@ def summarize(digests: list[InterestDigest], model: str = DEFAULT_MODEL) -> None
         return
 
     for digest in digests:
-        if not digest.items:
+        if not digest.interest.summarize or not any(not i.standing for i in digest.items):
             continue
         digest.summary = summarize_one(client, model, digest)
 
@@ -53,6 +53,7 @@ def _prompt(digest: InterestDigest) -> str:
     bullet_lines = "\n".join(
         f"- {item.title} ({item.url})" + (f": {item.summary}" if item.summary else "")
         for item in digest.items
+        if not item.standing
     )
     return (
         f"다음은 '{digest.interest.name}' 주제로 수집한 최신 글 목록입니다.\n"

@@ -38,6 +38,7 @@ uv run pytest            # 테스트
 | --- | --- | --- |
 | `ci.yml` | push(main), PR | 린트 · 포맷 검사 · 테스트 |
 | `report.yml` | 매일 08:00 KST (23:00 UTC), 수동 실행 | 리포트 생성 → `reports/` 커밋 → 메일 발송 |
+| `kopis-sync.yml` | 매일 02:00 KST (17:00 UTC), 수동 실행 | 메일 없이 KOPIS 공연 장부만 동기화 (`assistant sync-kopis`). 긴 시간 예산으로 미확인 공연을 처리해 아침 실행을 가볍게 함 |
 
 ### 필요한 Secrets / Variables
 
@@ -58,6 +59,8 @@ uv run pytest            # 테스트
 Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다. 465 포트는 SSL, 그 외는 STARTTLS 로 접속합니다.
 
 등록 후 Actions 탭 → `Interest Report` → **Run workflow** 로 바로 한 번 보내 보세요.
+
+관심사에 `summarize: false` 를 두면 그 관심사는 Claude 요약을 건너뜁니다. 수집에 실패한 소스는 리포트 끝에 한 줄로 표시됩니다.
 
 ## 소스 종류
 
@@ -90,7 +93,7 @@ interests:
 
 `kopis` 는 국내에서 티켓을 파는 공연이 의무 등록되는 전산망을 보므로 국내 공연은 거의 빠짐없이 잡힙니다. 해외 공연은 없습니다.
 키는 [kopis.or.kr](https://www.kopis.or.kr) 오픈API 신청으로 무료 발급받아 Secret `KOPIS_API_KEY` 로 등록하세요.
-공연 장부 `data/kopis_performances.json` 을 두고 증분 동기화합니다. 장부가 없으면 앞으로 `days`일치 공연을 전부 목록에 넣고(전체 동기화), 그 뒤로는 마지막 동기화일 이후 등록·수정된 공연만 받습니다. 처음 보는 공연만 상세(출연진)를 조회하고, 하루 상한을 넘기면 미확인으로 남겨 다음 날 이어서 처리합니다. 끝난 공연은 장부에서 지웁니다. 장부를 다시 맞추려면 Actions 의 Run workflow 에서 `kopis_full_sync` 를 켜세요.
+공연 장부 `data/kopis_performances.json` 을 두고 증분 동기화합니다. 이름이 맞는 공연이 새로 잡히거나 바뀌면 장부에 "보고 대기" 로 표시하고, 다음 리포트 실행이 그것을 메일에 싣습니다. 리포트에는 예정 공연 전체도 날짜순 D-day 와 함께 붙고, 새로 잡힌 공연은 Claude 웹 검색으로 티켓 오픈 일시를 찾아 붙입니다(`ANTHROPIC_API_KEY` 있을 때, 실행당 5건). 장부가 없으면 앞으로 `days`일치 공연을 전부 목록에 넣고(전체 동기화), 그 뒤로는 마지막 동기화일 이후 등록·수정된 공연만 받습니다. 처음 보는 공연만 상세(출연진)를 조회하고, 하루 상한을 넘기면 미확인으로 남겨 다음 날 이어서 처리합니다. 끝난 공연은 장부에서 지웁니다. 장부를 다시 맞추려면 Actions 의 Run workflow 에서 `kopis_full_sync` 를 켜세요.
 
 방화벽이 호출을 불규칙하게 막으므로 호출 사이에 7초를 두고, 막히면 30초 뒤 다시 시도합니다. 하루 한 번이라 수십 분 걸려도 괜찮습니다. 장르 코드: `CCCA` 클래식, `CCCD` 대중음악, `CCCC` 국악, `GGGA` 뮤지컬, `AAAA` 연극, `BBBC` 무용.
 

@@ -8,7 +8,12 @@
 - 장부가 있으면 마지막 동기화일 - since_days 이후 등록·수정된 공연만 받는다 (afterdate).
 - 처음 보는 공연만 상세(출연진)를 조회한다. 하루 상한을 넘기면 '미확인' 으로 남겨
   다음 실행에서 이어서 처리한다. 끝난 공연은 장부에서 지운다.
-- 리포트에는 이번 실행에서 새로 올라오거나 바뀐 공연 중 names 가 출연하는 것만 싣는다.
+- names 가 출연하는 공연이 새로 잡히거나 바뀌면 장부에 '보고 대기(pending_report)' 로 표시하고,
+  리포트 실행(fetch)이 그것들을 싣고 표시를 지운다. 동기화 전용 실행(sync)은 장부만 맞추므로
+  새벽에 찾은 공연도 아침 메일에 실린다.
+- 리포트에는 그 외에 names 의 예정 공연 전체를 standing 항목(날짜순, D-day)으로 함께 준다.
+- 새로 잡힌 공연은 Claude 웹 검색 한 번으로 티켓 오픈 일시를 찾아 붙인다 (ANTHROPIC_API_KEY
+  가 있을 때만, 실행당 최대 5건).
 워크플로가 data/ 를 커밋하므로 장부는 날마다 이어진다. KOPIS_FULL_SYNC=1 이면 장부가
 있어도 전체 동기화를 한 번 다시 한다.
 
@@ -54,6 +59,7 @@ DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
 MAX_DETAIL_CALLS = 150
+MAX_TICKET_LOOKUPS = 5  # 실행당 티켓 오픈 일시 웹 검색 횟수
 TIME_BUDGET_SECONDS = 1500.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
 STORE_PATH = Path(os.environ.get("KOPIS_STORE_PATH", "data/kopis_performances.json"))
 BLOCKED_MARKER = "Request Blocked"
@@ -73,6 +79,9 @@ class KopisSource:
         time_budget: float = TIME_BUDGET_SECONDS,
         store_path: Path | None = STORE_PATH,
         full_sync: bool | None = None,
+        max_detail: int = MAX_DETAIL_CALLS,
+        claude_client=None,
+        ticket_lookups: int = MAX_TICKET_LOOKUPS,
     ) -> None:
         self._client = client or httpx.Client(
             timeout=20.0,
@@ -87,8 +96,44 @@ class KopisSource:
         self._started = 0.0
         self._store_path = store_path
         self._full_sync = full_sync
+        self._max_detail = max_detail
+        self._claude_client = claude_client
+        self._ticket_lookups = ticket_lookups
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
+        """장부를 동기화한 뒤 보고 대기 공연(새 소식)과 예정 공연 전체(standing)를 돌려준다."""
+        today, store = self.sync(spec)
+        performances: dict[str, dict] = store["performances"]
+
+        items: list[Item] = []
+        for mt20id, entry in performances.items():
+            if not entry.get("pending_report"):
+                continue
+            matched = [n for n in spec.names if n in entry.get("matched", [])]
+            if not matched:
+                entry["pending_report"] = False
+                continue
+            if len(items) < limit:
+                items.append(to_item(mt20id, entry, entry.get("detail") or {}, matched))
+                entry["pending_report"] = False
+                entry["reported"] = today.isoformat()
+        save_store(self._store_path, store)
+
+        for mt20id, entry in performances.items():
+            matched = [n for n in spec.names if n in entry.get("matched", [])]
+            if matched:
+                items.append(
+                    to_item(mt20id, entry, entry.get("detail") or {}, matched, standing=True)
+                )
+        log.info(
+            "kopis: 새 소식 %d건, 예정 공연 %d건",
+            sum(1 for i in items if not i.standing),
+            len(items),
+        )
+        return items
+
+    def sync(self, spec: SourceSpec) -> tuple[date, dict]:
+        """장부를 동기화하고 (오늘 날짜, 장부) 를 돌려준다. 리포트는 만들지 않는다."""
         api_key = (self._api_key or os.environ.get("KOPIS_API_KEY") or "").strip()
         if not api_key:
             raise RuntimeError("KOPIS_API_KEY 가 없어 kopis 소스를 쓸 수 없습니다.")
@@ -114,7 +159,8 @@ class KopisSource:
             "" if after is None else f", {after.isoformat()} 이후 등록·수정분",
         )
 
-        # 1) 목록: 이번 실행에서 새로 보이거나 바뀐 공연을 장부에 넣고 '관심 대상' 으로 표시한다
+        # 1) 목록: 새로 보이거나 바뀐 공연을 장부에 넣는다. 이미 아는 공연이 바뀌었고 names 가
+        #    출연하면 보고 대기로 표시한다.
         touched: list[str] = []
         listing_complete = True
         for genre in genres:
@@ -134,6 +180,8 @@ class KopisSource:
                         entry["updated"] = today.isoformat()
                         if mt20id not in touched:
                             touched.append(mt20id)
+                        if entry.get("matched"):
+                            entry["pending_report"] = True
         pending = [k for k, v in performances.items() if "checked" not in v]
         log.info("kopis: 새로 보이거나 바뀐 공연 %d건, 미확인 %d건", len(touched), len(pending))
 
@@ -146,7 +194,7 @@ class KopisSource:
                 entry = performances[mt20id]
                 if "checked" in entry:
                     continue
-                if self._over_budget() or detail_calls >= MAX_DETAIL_CALLS:
+                if self._over_budget() or detail_calls >= self._max_detail:
                     log.warning(
                         "kopis: 상세 조회를 %d회에서 멈춥니다. 미확인은 다음 실행에서 이어갑니다.",
                         detail_calls,
@@ -163,25 +211,37 @@ class KopisSource:
                 entry["checked"] = today.isoformat()
                 entry["matched"] = matched
                 entry["detail"] = detail if matched else None
-                if mt20id not in touched:
-                    touched.append(mt20id)
+                if matched:
+                    entry["pending_report"] = True
+            # 3) 새로 잡힌 공연은 티켓 오픈 일시를 웹에서 찾아 둔다
+            self._lookup_ticket_open(performances)
         finally:
             if listing_complete:
                 store["last_sync"] = today.isoformat()
             save_store(self._store_path, store)
+        log.info("kopis: 상세 조회 %d회", detail_calls)
+        return today, store
 
-        # 3) 이번 실행에서 새로 올라오거나 바뀐 공연 중 names 가 출연하는 것만 리포트에
-        items: list[Item] = []
-        for mt20id in touched:
-            entry = performances[mt20id]
-            matched = [n for n in spec.names if n in entry.get("matched", [])]
-            if not matched:
-                continue
-            items.append(to_item(mt20id, entry, entry.get("detail") or {}, matched))
-            if len(items) >= limit:
-                break
-        log.info("kopis: 상세 조회 %d회, 수집 %d건", detail_calls, len(items))
-        return items
+    def _lookup_ticket_open(self, performances: dict[str, dict]) -> None:
+        targets = [
+            (k, v)
+            for k, v in performances.items()
+            if v.get("pending_report") and v.get("matched") and "ticket_open" not in v
+        ]
+        if not targets:
+            return
+        client = self._claude_client
+        if client is None:
+            from assistant.claude import make_client
+
+            client = make_client()
+        if client is None:
+            return
+        for mt20id, entry in targets[: self._ticket_lookups]:
+            if self._over_budget():
+                return
+            entry["ticket_open"] = lookup_ticket_open(client, entry)
+            log.info("kopis: 티켓 오픈 검색 %s → %s", mt20id, entry["ticket_open"] or "정보 없음")
 
     def _over_budget(self) -> bool:
         elapsed = time.monotonic() - self._started
@@ -275,6 +335,43 @@ def save_store(path: Path | None, store: dict) -> None:
     )
 
 
+# --- 티켓 오픈 일시 검색 ---------------------------------------------------------
+
+
+def lookup_ticket_open(client, entry: dict) -> str:
+    """Claude 웹 검색으로 티켓 오픈(예매 시작) 일시를 한 줄로 찾는다. 못 찾으면 빈 문자열."""
+    from anthropic import APIError
+
+    from assistant.claude import DEFAULT_MODEL, FALLBACK_BETA
+
+    where = f"{entry.get('fcltynm', '')}, {entry.get('prfpdfrom', '')}"
+    prompt = (
+        f"공연 '{entry.get('prfnm', '')}' ({where}) 의 티켓 오픈(예매 시작) 일시를 웹에서 "
+        "찾아 주세요. 선예매와 일반 예매가 다르면 둘 다 적습니다. "
+        "최종 답변은 설명 없이 한 줄만, 예: '일반 예매 2026-10-20 14:00 (인터파크)'. "
+        "확실한 정보가 없으면 정확히 '정보 없음' 이라고만 답하세요."
+    )
+    try:
+        response = client.beta.messages.create(
+            model=DEFAULT_MODEL,
+            max_tokens=2000,
+            betas=[FALLBACK_BETA],
+            fallbacks="default",
+            tools=[{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}],
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except APIError as exc:
+        log.warning("kopis: 티켓 오픈 검색 실패 (%s): %s", entry.get("prfnm", ""), exc)
+        return ""
+    if response.stop_reason == "refusal":
+        return ""
+    text = "".join(b.text for b in response.content if b.type == "text").strip()
+    line = text.splitlines()[-1].strip() if text else ""
+    if not line or "정보 없음" in line:
+        return ""
+    return line[:200]
+
+
 # --- 순수 함수 (테스트 대상) --------------------------------------------------
 
 
@@ -324,7 +421,13 @@ def parse_rows(xml_text: str) -> list[dict[str, object]]:
     return rows
 
 
-def to_item(mt20id: str, perf: dict, detail: dict[str, object], matched: list[str]) -> Item:
+def to_item(
+    mt20id: str,
+    perf: dict,
+    detail: dict[str, object],
+    matched: list[str],
+    standing: bool = False,
+) -> Item:
     relates = detail.get("relates") or []
     first_link = next((r["url"] for r in relates if r.get("url")), "")  # type: ignore[index]
     ticket_sites = ", ".join(r["name"] for r in relates if r.get("name"))  # type: ignore[index]
@@ -338,6 +441,7 @@ def to_item(mt20id: str, perf: dict, detail: dict[str, object], matched: list[st
         str(detail.get("dtguidance", "")),
         str(detail.get("pcseguidance", "")),
         f"예매 {ticket_sites}" if ticket_sites else "",
+        f"티켓 오픈 {perf.get('ticket_open')}" if perf.get("ticket_open") else "",
     ]
     details = " · ".join(p for p in parts if p)
     return Item(
@@ -347,7 +451,17 @@ def to_item(mt20id: str, perf: dict, detail: dict[str, object], matched: list[st
         summary=details,
         details=details,
         attribution=ATTRIBUTION,
+        standing=standing,
+        event_date=_parse_kopis_date(perf.get("prfpdfrom", "")),
     )
+
+
+def _parse_kopis_date(value: str) -> date | None:
+    """'2026.10.22' 형식."""
+    try:
+        return datetime.strptime(value, "%Y.%m.%d").date()
+    except ValueError:
+        return None
 
 
 def _parse_datetime(value: str) -> datetime | None:
