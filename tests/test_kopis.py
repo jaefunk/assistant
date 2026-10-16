@@ -483,3 +483,18 @@ def test_legacy_entry_without_cast_is_rechecked(tmp_path) -> None:
     )
     assert _detail_requests(requests) == ["PF2"]
     assert [i.title for i in _news(items)] == ["KBS교향악단 제832회 정기연주회"]
+
+
+def test_ticket_open_lookup_runs_even_when_kopis_budget_is_spent(tmp_path) -> None:
+    """긴 동기화로 KOPIS 예산을 다 써도 티켓 오픈 검색은 돈다 (Claude 호출이라 예산과 무관)."""
+    store_path = tmp_path / "s.json"
+    # 먼저 장부를 만들어 보고 대기 공연을 남겨 둔다
+    _source(_client([]), store_path=store_path).sync(_spec())
+    claude = _FakeClaude("일반 예매 2026-10-01 14:00")
+    _source(
+        _client([], list_xml="<dbs></dbs>"),
+        store_path=store_path,
+        claude_client=claude,
+        time_budget=-1,
+    ).sync(_spec())
+    assert len(claude.prompts) == 3
