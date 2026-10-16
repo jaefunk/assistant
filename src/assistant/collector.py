@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from assistant.models import InterestDigest, Item, Settings
 from assistant.sources import get_source
@@ -19,10 +19,16 @@ def collect(settings: Settings) -> list[InterestDigest]:
             try:
                 items = get_source(spec.type).fetch(spec, settings.max_items_per_source)
             except Exception as exc:  # 소스 하나가 죽어도 리포트 전체는 나가야 한다
-                log.warning("수집 실패: %s (%s): %s", spec.url, interest.name, exc)
+                label = spec.url or spec.query or ", ".join(spec.names)
+                log.warning("수집 실패: %s %s (%s): %s", spec.type, label, interest.name, exc)
+                digest.failures.append(f"{interest.name} · {spec.type} {label}: {str(exc)[:120]}")
                 continue
             digest.items.extend(items)
-        digest.items.sort(key=_sort_key, reverse=True)
+        news = [i for i in digest.items if not i.standing]
+        standing = [i for i in digest.items if i.standing]
+        news.sort(key=_sort_key, reverse=True)
+        standing.sort(key=lambda i: (i.event_date is None, i.event_date or date.max))
+        digest.items = news + standing
         digests.append(digest)
     return digests
 

@@ -69,3 +69,37 @@ def test_render_without_attribution_has_no_footer() -> None:
         interest=Interest(name="AI", sources=()), items=[Item("A", "https://x")]
     )
     assert "---" not in render([digest], date(2026, 1, 1))
+
+
+def test_render_standing_items_with_dday_and_failures() -> None:
+    digest = InterestDigest(
+        interest=Interest(name="공연", sources=()),
+        items=[
+            Item(title="새 소식", url="https://x/n", details="출연 손열음"),
+            Item(
+                title="리사이틀",
+                url="https://x/r",
+                details="예술의전당",
+                standing=True,
+                event_date=date(2026, 10, 22),
+            ),
+        ],
+        failures=["AI · rss https://feed: 502"],
+    )
+    md = render([digest], date(2026, 10, 16))
+    assert "- [새 소식](https://x/n)" in md
+    assert "**예정 (1건)**" in md
+    assert "- 10.22(목) D-6 · [리사이틀](https://x/r) · 예술의전당" in md
+    assert "_수집 실패: AI · rss https://feed: 502_" in md
+
+
+def test_render_only_standing_says_no_news() -> None:
+    digest = InterestDigest(
+        interest=Interest(name="공연", sources=()),
+        items=[
+            Item(title="리사이틀", url="https://x/r", standing=True, event_date=date(2026, 10, 16))
+        ],
+    )
+    md = render([digest], date(2026, 10, 16))
+    assert "_새로 올라온 항목이 없습니다._" in md
+    assert "D-Day" in md

@@ -8,6 +8,7 @@ GitHub Actions 로 정기 실행되는 관심사 정보 리포트 서비스. Pyt
 - 린트/포맷: `uv run ruff check .` / `uv run ruff format .`
 - 테스트: `uv run pytest`
 - 실행: `uv run assistant report --stdout --no-summary`
+- KOPIS 장부만 동기화: `uv run assistant sync-kopis --budget-minutes 120`
 
 ## 구조
 
@@ -20,6 +21,8 @@ GitHub Actions 로 정기 실행되는 관심사 정보 리포트 서비스. Pyt
 - `src/assistant/report.py` : Markdown 렌더링 및 `reports/` 저장
 - `src/assistant/mailer.py` : SMTP 메일 발송. `SMTP_USER`/`SMTP_PASSWORD`/`MAIL_TO` 환경변수 필요
 - `.github/workflows/report.yml` : 매일 08:00 KST(23:00 UTC) 리포트 생성 → 커밋 → `--email` 발송
+- `.github/workflows/kopis-sync.yml` : 매일 02:00 KST 메일 없이 KOPIS 장부만 동기화
+- `Item.standing` 은 새 소식이 아닌 '현재 상태' 항목(예정 공연 전체). 요약 대상에서 제외되고 리포트에 날짜순 D-day 로 표시
 
 ## 규칙
 

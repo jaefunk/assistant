@@ -1,5 +1,5 @@
 # 리포트로 받아볼 관심사 목록.
-# 각 항목은 name(제목), sources(수집 소스 목록)로 구성됩니다.
+# 각 항목은 name(제목), sources(수집 소스 목록), summarize(Claude 요약 여부, 기본 true)로 구성됩니다.
 #
 # source.type:
 #   rss           : url 의 RSS/Atom 피드에서 가져옵니다.
@@ -22,6 +22,7 @@ interests:
       - type: rss
         url: https://planetpython.org/rss20.xml
   - name: 공연 소식
+    summarize: false   # 공연은 요약 대신 목록 그대로. 예정 공연 전체도 함께 표시됨
     sources:
       - type: kopis
         names: [손열음, 조성진, 백건우, 정명훈, 송하예, 이예준, 신예영, 정승환]

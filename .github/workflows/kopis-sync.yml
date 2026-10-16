@@ -1,0 +1,59 @@
+name: KOPIS Sync
+
+# 메일 없이 KOPIS 공연 장부(data/kopis_performances.json)만 맞춘다.
+# 매일 02:00 KST (전날 17:00 UTC) 에 긴 시간 예산으로 돌아, 아침 8시 리포트 실행은 증분만 보게 한다.
+on:
+  schedule:
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+    inputs:
+      budget_minutes:
+        description: "시간 예산 (분)"
+        type: number
+        default: 120
+      full_sync:
+        description: "장부가 있어도 전체 동기화"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: interest-report   # 리포트 실행과 같은 그룹: 장부를 동시에 고치지 않게
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Sync KOPIS ledger
+        env:
+          KOPIS_API_KEY: ${{ secrets.KOPIS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          FLAGS="--budget-minutes ${{ inputs.budget_minutes || 120 }}"
+          if [ "${{ inputs.full_sync }}" = "true" ]; then FLAGS="$FLAGS --full-sync"; fi
+          uv run assistant sync-kopis $FLAGS
+
+      - name: Commit ledger
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "변경된 장부가 없습니다."
+            exit 0
+          fi
+          git commit -m "kopis: 장부 동기화 $(date -u +%Y-%m-%d)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push

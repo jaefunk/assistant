@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 
 
 @dataclass(frozen=True)
@@ -29,6 +29,7 @@ class Interest:
 
     name: str
     sources: tuple[SourceSpec, ...]
+    summarize: bool = True  # False 면 이 관심사는 Claude 요약을 건너뛴다
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,10 @@ class Item:
     summary: str = ""  # 요약 모델에 넘길 설명. 리포트에는 안 보임
     details: str = ""  # 리포트에 제목 아래 한 줄로 보여줄 정보 (장소, 기간, 가격 등)
     attribution: str = ""  # 데이터 출처 표기 의무가 있는 소스의 문구. 리포트 끝에 모아 표시
+    standing: bool = False  # True 면 새 소식이 아니라 "현재 상태" 목록용 (예: 예정 공연 전체)
+    event_date: date | None = (
+        None  # 공연일처럼 항목이 가리키는 날짜. standing 목록 정렬과 D-day 에 사용
+    )
 
 
 @dataclass
@@ -56,3 +61,4 @@ class InterestDigest:
     interest: Interest
     items: list[Item] = field(default_factory=list)
     summary: str | None = None
+    failures: list[str] = field(default_factory=list)  # 실패한 소스 설명. 리포트 끝에 표시

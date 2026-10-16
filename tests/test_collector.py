@@ -41,3 +41,4 @@ def test_collect_continues_when_a_source_fails(monkeypatch) -> None:
     )
     digests = collect(settings)
     assert len(digests[0].items) == 3
+    assert digests[0].failures == ["T · broken x: boom"]

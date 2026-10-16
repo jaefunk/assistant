@@ -54,3 +54,27 @@ def test_summarize_skips_without_api_key(monkeypatch) -> None:
     digest = _digest()
     summarize([digest])
     assert digest.summary is None
+
+
+def test_summarize_skips_interest_with_summarize_false(monkeypatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    called = {"n": 0}
+
+    def fake_make_client():
+        called["n"] += 1
+        return _client(_OkMessages())
+
+    import assistant.summarizer as mod
+
+    monkeypatch.setattr(mod, "make_client", fake_make_client)
+    quiet = InterestDigest(
+        interest=Interest(name="공연", sources=(), summarize=False),
+        items=[Item(title="A", url="https://x/1")],
+    )
+    standing_only = InterestDigest(
+        interest=Interest(name="S", sources=()),
+        items=[Item(title="B", url="https://x/2", standing=True)],
+    )
+    summarize([quiet, standing_only])
+    assert quiet.summary is None
+    assert standing_only.summary is None

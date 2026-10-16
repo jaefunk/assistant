@@ -78,3 +78,23 @@ def test_kopis_source_parses_names_and_genres(tmp_path: Path) -> None:
     assert spec.genres == ("CCCA", "CCCD")
     assert spec.areas == ("서울", "경기")
     assert (spec.days, spec.since_days) == (90, 2)
+
+
+def test_interest_summarize_flag(tmp_path: Path) -> None:
+    cfg = tmp_path / "interests.yaml"
+    cfg.write_text(
+        "interests:\n"
+        "  - name: 공연\n"
+        "    summarize: false\n"
+        "    sources:\n"
+        "      - type: kopis\n"
+        "        names: [손열음]\n"
+        "  - name: AI\n"
+        "    sources:\n"
+        "      - type: rss\n"
+        "        url: https://example.com/feed\n",
+        encoding="utf-8",
+    )
+    interests = load_settings(cfg).interests
+    assert interests[0].summarize is False
+    assert interests[1].summarize is True
