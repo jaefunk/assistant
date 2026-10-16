@@ -93,7 +93,9 @@ def test_parse_rows_reads_relates() -> None:
 
 def test_fetch_matches_by_title_then_by_cast() -> None:
     requests: list[httpx.Request] = []
-    source = KopisSource(client=_client(requests), api_key="k", delay=0, today=date(2026, 10, 16))
+    source = KopisSource(
+        client=_client(requests), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
+    )
     items = source.fetch(_spec(), limit=10)
 
     assert [i.title for i in items] == ["손열음 피아노 리사이틀", "KBS교향악단 제832회 정기연주회"]
@@ -120,19 +122,25 @@ def test_fetch_matches_by_title_then_by_cast() -> None:
 
 
 def test_fetch_respects_limit() -> None:
-    source = KopisSource(client=_client([]), api_key="k", delay=0, today=date(2026, 10, 16))
+    source = KopisSource(
+        client=_client([]), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
+    )
     assert len(source.fetch(_spec(), limit=1)) == 1
 
 
 def test_fetch_without_key_raises(monkeypatch) -> None:
     monkeypatch.delenv("KOPIS_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="KOPIS_API_KEY"):
-        KopisSource(client=_client([]), delay=0).fetch(_spec(), limit=1)
+        KopisSource(client=_client([]), delay=0, backoff=0).fetch(_spec(), limit=1)
 
 
 def test_fetch_error_response_raises() -> None:
     source = KopisSource(
-        client=_client([], list_xml=ERROR_XML), api_key="bad", delay=0, today=date(2026, 10, 16)
+        client=_client([], list_xml=ERROR_XML),
+        api_key="bad",
+        delay=0,
+        backoff=0,
+        today=date(2026, 10, 16),
     )
     with pytest.raises(RuntimeError, match="kopis 오류 02"):
         source.fetch(_spec(), limit=1)
@@ -153,6 +161,24 @@ def test_http_error_includes_body() -> None:
         return httpx.Response(400, text="<error>stdate is invalid</error>")
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    source = KopisSource(client=client, api_key="k", delay=0, today=date(2026, 10, 16))
+    source = KopisSource(client=client, api_key="k", delay=0, backoff=0, today=date(2026, 10, 16))
     with pytest.raises(RuntimeError, match="HTTP 400.*stdate is invalid"):
         source.fetch(_spec(), limit=1)
+
+
+def test_blocked_response_is_retried() -> None:
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(400, text="<HTML><H1>Request Blocked</H1></HTML>")
+        if request.url.path.endswith("/pblprfr"):
+            return httpx.Response(200, text=LIST_XML)
+        return httpx.Response(200, text=DETAILS[request.url.path.rsplit("/", 1)[-1]])
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = KopisSource(client=client, api_key="k", delay=0, backoff=0, today=date(2026, 10, 16))
+    items = source.fetch(_spec(), limit=10)
+    assert len(items) == 2
+    assert calls["n"] >= 2

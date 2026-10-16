@@ -16,7 +16,9 @@ API 메모 (가이드 v5.0 기준):
 - 상세 GET {BASE}/pblprfr/{mt20id}?service=KEY → prfcast, prfcrew, pcseguidance,
   dtguidance, relates/relate/relatenm/relateurl 등.
 - 오류도 HTTP 200 으로 오고 본문에 <returncode>, <errmsg> 가 있다.
-- 초당 10회 이상 호출하면 서비스가 중지되므로 호출 사이에 간격을 둔다.
+- 초당 10회 이상 호출하면 서비스가 중지된다. 실제로는 0.2초 간격으로 5번째 요청부터
+  방화벽이 'Request Blocked'(HTTP 400 HTML) 로 막았으므로 1초 간격을 두고, 막히면
+  잠시 쉬었다가 다시 시도한다. python-httpx 기본 User-Agent 도 400 으로 막힌다.
 - 이용약관상 출처 표기가 의무다 (Item.attribution 으로 리포트 끝에 표시).
 """
 
@@ -39,7 +41,8 @@ BASE_URL = os.environ.get("KOPIS_BASE_URL", "http://www.kopis.or.kr/openApi/rest
 DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
-MAX_DETAIL_CALLS = 300
+MAX_DETAIL_CALLS = 150
+BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
 
@@ -49,7 +52,8 @@ class KopisSource:
         self,
         client: httpx.Client | None = None,
         api_key: str | None = None,
-        delay: float = 0.2,
+        delay: float = 1.0,
+        backoff: float = 5.0,
         today: date | None = None,
     ) -> None:
         self._client = client or httpx.Client(
@@ -59,6 +63,7 @@ class KopisSource:
         )
         self._api_key = api_key
         self._delay = delay
+        self._backoff = backoff
         self._today = today
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
@@ -135,18 +140,28 @@ class KopisSource:
         return rows[0] if rows else {}
 
     def _get(self, url: str, params: dict[str, str]) -> str:
-        for attempt in (1, 2):
+        for attempt in (1, 2, 3):
             if self._delay:
                 time.sleep(self._delay)
             response = self._client.get(url, params=params)
+            body = response.text.strip()
+            if response.status_code >= 400 and BLOCKED_MARKER in body:
+                # 방화벽 차단. 잠시 쉬고 다시 시도한다.
+                log.warning(
+                    "kopis: 요청 차단됨 (%s), %.0f초 후 재시도 %d", url, self._backoff, attempt
+                )
+                if self._backoff:
+                    time.sleep(self._backoff)
+                continue
             if response.status_code >= 400:
-                # 서버가 400 등을 돌려줄 때 본문에 이유가 있는 경우가 많다. 로그에 남긴다.
-                body = response.text.strip().replace("\n", " ")[:300]
-                raise RuntimeError(f"kopis HTTP {response.status_code} ({url}): {body}")
-            if response.text.strip():
+                # 본문에 이유가 있는 경우가 많다. 로그에 남긴다.
+                raise RuntimeError(
+                    f"kopis HTTP {response.status_code} ({url}): {body.replace(chr(10), ' ')[:300]}"
+                )
+            if body:
                 return response.text
             log.warning("kopis: 빈 응답 (%s), 재시도 %d", url, attempt)
-        raise RuntimeError(f"kopis: 빈 응답이 반복됩니다 ({url})")
+        raise RuntimeError(f"kopis: 요청이 계속 실패합니다 ({url})")
 
 
 # --- 순수 함수 (테스트 대상) --------------------------------------------------
