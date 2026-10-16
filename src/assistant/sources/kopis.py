@@ -6,6 +6,7 @@
 config 예:
     - type: kopis
       names: [손열음, 조성진]     # 공연명 또는 출연진에 이 이름이 있으면 수집
+      areas: [서울, 인천, 경기]   # 지역(area) 이 이걸로 시작하는 공연만. 비우면 전국
       genres: [CCCA, CCCD]       # 장르 코드. 기본 CCCA(클래식), CCCD(대중음악)
       days: 180                  # 오늘부터 며칠 뒤까지의 공연을 볼지
       since_days: 1              # 최근 N일 안에 등록·수정된 공연만 (afterdate)
@@ -17,8 +18,9 @@ API 메모 (가이드 v5.0 기준):
   dtguidance, relates/relate/relatenm/relateurl 등.
 - 오류도 HTTP 200 으로 오고 본문에 <returncode>, <errmsg> 가 있다.
 - 초당 10회 이상 호출하면 서비스가 중지된다. 실제로는 0.2초 간격으로 5번째 요청부터
-  방화벽이 'Request Blocked'(HTTP 400 HTML) 로 막았으므로 1초 간격을 두고, 막히면
-  잠시 쉬었다가 다시 시도한다. python-httpx 기본 User-Agent 도 400 으로 막힌다.
+  방화벽이 'Request Blocked'(HTTP 400 HTML) 로 막았으므로 5초 간격을 두고, 막히면
+  10초 쉬었다가 다시 시도한다. 하루 한 번 도는 작업이라 느려도 된다.
+  python-httpx 기본 User-Agent 도 400 으로 막힌다.
 - 이용약관상 출처 표기가 의무다 (Item.attribution 으로 리포트 끝에 표시).
 """
 
@@ -41,7 +43,7 @@ BASE_URL = os.environ.get("KOPIS_BASE_URL", "http://www.kopis.or.kr/openApi/rest
 DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
-MAX_DETAIL_CALLS = 150
+MAX_DETAIL_CALLS = 100
 BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
@@ -52,8 +54,8 @@ class KopisSource:
         self,
         client: httpx.Client | None = None,
         api_key: str | None = None,
-        delay: float = 1.0,
-        backoff: float = 5.0,
+        delay: float = 5.0,
+        backoff: float = 10.0,
         today: date | None = None,
     ) -> None:
         self._client = client or httpx.Client(
@@ -82,6 +84,8 @@ class KopisSource:
         for genre in genres:
             for start, end in date_chunks(today, spec.days, CHUNK_DAYS):
                 for perf in self._list(api_key, start, end, genre, after):
+                    if not in_areas(spec.areas, perf.get("area", "")):
+                        continue
                     candidates.setdefault(perf.get("mt20id", ""), perf)
         candidates.pop("", None)
         log.info("kopis: 후보 %d건 (등록·수정 %s 이후)", len(candidates), after.isoformat())
@@ -177,6 +181,11 @@ def date_chunks(start: date, days: int, chunk: int = CHUNK_DAYS) -> list[tuple[d
         chunks.append((cursor, stop))
         cursor = stop + timedelta(days=1)
     return chunks
+
+
+def in_areas(areas: tuple[str, ...], area: str) -> bool:
+    """areas 가 비어 있으면 전국. '서울' 은 '서울특별시' 에 맞는다."""
+    return not areas or any(area.startswith(a) for a in areas)
 
 
 def match_names(names: tuple[str, ...], *texts: str) -> list[str]:

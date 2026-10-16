@@ -19,6 +19,7 @@ class SourceSpec:
     days: int = 7
     names: tuple[str, ...] = ()
     genres: tuple[str, ...] = ()
+    areas: tuple[str, ...] = ()
     since_days: int = 1
 
 
