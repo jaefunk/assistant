@@ -1,0 +1,56 @@
+name: Interest Report
+
+on:
+  schedule:
+    # 매일 08:00 KST = 전날 23:00 UTC. GitHub cron 은 UTC 기준이며 몇 분 지연될 수 있다.
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+    inputs:
+      no_summary:
+        description: "Claude 요약 생략 (수집만)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: interest-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Generate report
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          MAIL_FROM: ${{ vars.MAIL_FROM }}
+        run: |
+          FLAGS="--email"
+          if [ "${{ inputs.no_summary }}" = "true" ]; then FLAGS="$FLAGS --no-summary"; fi
+          uv run assistant report $FLAGS
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          if git diff --cached --quiet; then
+            echo "변경된 리포트가 없습니다."
+            exit 0
+          fi
+          git commit -m "report: $(date -u +%Y-%m-%d)"
+          git push
