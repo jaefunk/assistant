@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime
 
 import httpx
 import pytest
@@ -29,6 +29,8 @@ LIST_XML = """<?xml version="1.0" encoding="UTF-8"?>
 DETAILS = {
     "PF1": """<dbs><db>
         <mt20id>PF1</mt20id><prfcast>손열음</prfcast><pcseguidance>R석 120,000원</pcseguidance>
+        <dtguidance>일요일(17:00)</dtguidance><visit>N</visit>
+        <updatedate>2026-10-15 09:30:00</updatedate>
         <relates>
           <relate><relatenm>인터파크</relatenm><relateurl>https://tickets.interpark.com/1</relateurl></relate>
           <relate><relatenm>예스24</relatenm><relateurl>https://ticket.yes24.com/1</relateurl></relate>
@@ -98,6 +100,10 @@ def test_fetch_matches_by_title_then_by_cast() -> None:
     assert items[0].url == "https://tickets.interpark.com/1"
     assert "출연 손열음" in items[0].details
     assert "R석 120,000원" in items[0].details
+    assert "일요일(17:00)" in items[0].details
+    assert items[0].published == datetime(2026, 10, 15, 9, 30, tzinfo=UTC)
+    assert items[0].attribution.startswith("출처:")
+    assert items[1].published is None
     assert "예매 인터파크, 예스24" in items[0].details
     # 예매처 링크가 없으면 KOPIS 공개 페이지로
     assert items[1].url.endswith("mt20id=PF2")

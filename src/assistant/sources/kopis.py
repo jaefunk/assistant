@@ -17,6 +17,7 @@ API 메모 (가이드 v5.0 기준):
   dtguidance, relates/relate/relatenm/relateurl 등.
 - 오류도 HTTP 200 으로 오고 본문에 <returncode>, <errmsg> 가 있다.
 - 초당 10회 이상 호출하면 서비스가 중지되므로 호출 사이에 간격을 둔다.
+- 이용약관상 출처 표기가 의무다 (Item.attribution 으로 리포트 끝에 표시).
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ import os
 import time
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 
@@ -40,6 +41,7 @@ CHUNK_DAYS = 31
 ROWS = 100
 MAX_DETAIL_CALLS = 300
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
+ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
 
 
 class KopisSource:
@@ -192,8 +194,10 @@ def to_item(perf: dict[str, str], detail: dict[str, object], matched: list[str])
     period = f"{perf.get('prfpdfrom', '')}~{perf.get('prfpdto', '')}".strip("~")
     parts = [
         f"출연 {', '.join(matched)}",
+        "내한" if detail.get("visit") == "Y" else "",
         perf.get("fcltynm", ""),
         period,
+        str(detail.get("dtguidance", "")),
         str(detail.get("pcseguidance", "")),
         f"예매 {ticket_sites}" if ticket_sites else "",
     ]
@@ -201,7 +205,16 @@ def to_item(perf: dict[str, str], detail: dict[str, object], matched: list[str])
     return Item(
         title=perf.get("prfnm", "(제목 없음)"),
         url=first_link or PUBLIC_PAGE.format(mt20id=perf.get("mt20id", "")),
-        published=None,
+        published=_parse_datetime(str(detail.get("updatedate") or detail.get("frstregdt") or "")),
         summary=details,
         details=details,
+        attribution=ATTRIBUTION,
     )
+
+
+def _parse_datetime(value: str) -> datetime | None:
+    """'2019-07-25 10:03:14' 형식. 못 읽으면 None."""
+    try:
+        return datetime.strptime(value[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
+    except ValueError:
+        return None

@@ -45,6 +45,7 @@ class Item:
     published: datetime | None = None
     summary: str = ""  # 요약 모델에 넘길 설명. 리포트에는 안 보임
     details: str = ""  # 리포트에 제목 아래 한 줄로 보여줄 정보 (장소, 기간, 가격 등)
+    attribution: str = ""  # 데이터 출처 표기 의무가 있는 소스의 문구. 리포트 끝에 모아 표시
 
 
 @dataclass
