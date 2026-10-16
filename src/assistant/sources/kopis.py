@@ -22,16 +22,20 @@ API 메모 (가이드 v5.0 기준):
   두고, 막히면 30초 쉬었다가 다시 시도한다. 하루 한 번 도는 작업이라 느려도 된다.
   python-httpx 기본 User-Agent 도 400 으로 막힌다.
 - 이용약관상 출처 표기가 의무다 (Item.attribution 으로 리포트 끝에 표시).
+- 상세 조회가 호출의 대부분이라, 한 번 출연진을 확인한 공연은 reports/kopis_cache.json 에
+  적어 두고 30일간 다시 조회하지 않는다 (워크플로가 reports/ 를 커밋하므로 날마다 이어진다).
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import httpx
 
@@ -43,8 +47,10 @@ BASE_URL = os.environ.get("KOPIS_BASE_URL", "http://www.kopis.or.kr/openApi/rest
 DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
-MAX_DETAIL_CALLS = 60
-TIME_BUDGET_SECONDS = 600.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
+MAX_DETAIL_CALLS = 150
+TIME_BUDGET_SECONDS = 1500.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
+CACHE_PATH = Path(os.environ.get("KOPIS_CACHE_PATH", "reports/kopis_cache.json"))
+CACHE_DAYS = 30
 BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
@@ -59,6 +65,7 @@ class KopisSource:
         backoff: float = 30.0,
         today: date | None = None,
         time_budget: float = TIME_BUDGET_SECONDS,
+        cache_path: Path | None = CACHE_PATH,
     ) -> None:
         self._client = client or httpx.Client(
             timeout=20.0,
@@ -71,6 +78,7 @@ class KopisSource:
         self._today = today
         self._time_budget = time_budget
         self._started = 0.0
+        self._cache_path = cache_path
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
         api_key = (self._api_key or os.environ.get("KOPIS_API_KEY") or "").strip()
@@ -97,33 +105,56 @@ class KopisSource:
         candidates.pop("", None)
         log.info("kopis: 후보 %d건 (등록·수정 %s 이후)", len(candidates), after.isoformat())
 
-        # 2) 공연명에 이름이 없으면 상세의 출연진까지 확인한다
+        # 2) 공연명에 이름이 없으면 상세의 출연진까지 확인한다. 최근에 확인한 공연은 캐시를 쓴다.
+        cache = load_cache(self._cache_path, today)
         items: list[Item] = []
         detail_calls = 0
-        for mt20id, perf in candidates.items():
-            if self._over_budget():
-                break
-            matched = match_names(spec.names, perf.get("prfnm", ""))
-            detail: dict[str, object] | None = None
-            if not matched:
-                if detail_calls >= MAX_DETAIL_CALLS:
-                    log.warning(
-                        "kopis: 상세 조회 한도(%d)에 도달해 나머지는 건너뜁니다.", MAX_DETAIL_CALLS
-                    )
+        skipped = 0
+        try:
+            for mt20id, perf in candidates.items():
+                if self._over_budget():
                     break
-                detail = self._detail(api_key, mt20id)
-                detail_calls += 1
-                matched = match_names(
-                    spec.names, str(detail.get("prfcast", "")), str(detail.get("prfcrew", ""))
-                )
-            if not matched:
-                continue
-            if detail is None:
-                detail = self._detail(api_key, mt20id)
-                detail_calls += 1
-            items.append(to_item(perf, detail, matched))
-            if len(items) >= limit:
-                break
+                cached = cache.get(mt20id)
+                if cached is not None:
+                    matched = [n for n in spec.names if n in cached.get("matched", [])]
+                    detail = cached.get("detail") or {}
+                    if not matched:
+                        skipped += 1
+                        continue
+                else:
+                    if detail_calls >= MAX_DETAIL_CALLS:
+                        log.warning(
+                            "kopis: 상세 조회 한도(%d)에 도달해 나머지는 건너뜁니다.",
+                            MAX_DETAIL_CALLS,
+                        )
+                        break
+                    detail = self._detail(api_key, mt20id)
+                    detail_calls += 1
+                    matched = match_names(
+                        spec.names,
+                        perf.get("prfnm", ""),
+                        str(detail.get("prfcast", "")),
+                        str(detail.get("prfcrew", "")),
+                    )
+                    cache[mt20id] = {
+                        "checked": today.isoformat(),
+                        "title": perf.get("prfnm", ""),
+                        "matched": matched,
+                        "detail": detail if matched else None,
+                    }
+                    if not matched:
+                        continue
+                items.append(to_item(perf, detail, matched))
+                if len(items) >= limit:
+                    break
+        finally:
+            save_cache(self._cache_path, cache)
+        log.info(
+            "kopis: 상세 조회 %d회, 캐시로 건너뜀 %d건, 수집 %d건",
+            detail_calls,
+            skipped,
+            len(items),
+        )
         return items
 
     def _over_budget(self) -> bool:
@@ -182,6 +213,31 @@ class KopisSource:
                 return response.text
             log.warning("kopis: 빈 응답 (%s), 재시도 %d", url, attempt)
         raise RuntimeError(f"kopis: 요청이 계속 실패합니다 ({url})")
+
+
+# --- 캐시 ---------------------------------------------------------------------
+
+
+def load_cache(path: Path | None, today: date) -> dict[str, dict]:
+    """CACHE_DAYS 안에 확인한 항목만 남긴다. 파일이 없거나 깨졌으면 빈 캐시."""
+    if path is None or not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        log.warning("kopis: 캐시 파일을 읽지 못해 새로 시작합니다 (%s)", path)
+        return {}
+    cutoff = (today - timedelta(days=CACHE_DAYS)).isoformat()
+    return {k: v for k, v in raw.items() if isinstance(v, dict) and v.get("checked", "") >= cutoff}
+
+
+def save_cache(path: Path | None, cache: dict[str, dict]) -> None:
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(cache, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8"
+    )
 
 
 # --- 순수 함수 (테스트 대상) --------------------------------------------------

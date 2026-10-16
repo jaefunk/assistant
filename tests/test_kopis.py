@@ -75,6 +75,12 @@ def _client(requests: list[httpx.Request], list_xml: str = LIST_XML) -> httpx.Cl
     return httpx.Client(transport=httpx.MockTransport(handler))
 
 
+def _source(client: httpx.Client, cache_path=None, **kw) -> KopisSource:
+    base = dict(api_key="k", delay=0, backoff=0, today=date(2026, 10, 16), cache_path=cache_path)
+    base.update(kw)
+    return KopisSource(client=client, **base)
+
+
 def _spec(**kw) -> SourceSpec:
     base = dict(type="kopis", names=("손열음", "정명훈"), genres=("CCCA",), days=10, since_days=1)
     base.update(kw)
@@ -113,9 +119,7 @@ def test_parse_rows_reads_relates() -> None:
 
 def test_fetch_matches_by_title_then_by_cast() -> None:
     requests: list[httpx.Request] = []
-    source = KopisSource(
-        client=_client(requests), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
-    )
+    source = _source(_client(requests))
     items = source.fetch(_spec(), limit=10)
 
     assert [i.title for i in items] == [
@@ -146,34 +150,22 @@ def test_fetch_matches_by_title_then_by_cast() -> None:
 
 
 def test_fetch_filters_by_area() -> None:
-    source = KopisSource(
-        client=_client([]), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
-    )
-    items = source.fetch(_spec(areas=("서울", "인천", "경기")), limit=10)
+    items = _source(_client([])).fetch(_spec(areas=("서울", "인천", "경기")), limit=10)
     assert [i.title for i in items] == ["손열음 피아노 리사이틀", "KBS교향악단 제832회 정기연주회"]
 
 
 def test_fetch_respects_limit() -> None:
-    source = KopisSource(
-        client=_client([]), api_key="k", delay=0, backoff=0, today=date(2026, 10, 16)
-    )
-    assert len(source.fetch(_spec(), limit=1)) == 1
+    assert len(_source(_client([])).fetch(_spec(), limit=1)) == 1
 
 
 def test_fetch_without_key_raises(monkeypatch) -> None:
     monkeypatch.delenv("KOPIS_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="KOPIS_API_KEY"):
-        KopisSource(client=_client([]), delay=0, backoff=0).fetch(_spec(), limit=1)
+        KopisSource(client=_client([]), delay=0, backoff=0, cache_path=None).fetch(_spec(), limit=1)
 
 
 def test_fetch_error_response_raises() -> None:
-    source = KopisSource(
-        client=_client([], list_xml=ERROR_XML),
-        api_key="bad",
-        delay=0,
-        backoff=0,
-        today=date(2026, 10, 16),
-    )
+    source = _source(_client([], list_xml=ERROR_XML), api_key="bad")
     with pytest.raises(RuntimeError, match="kopis 오류 02"):
         source.fetch(_spec(), limit=1)
 
@@ -192,8 +184,7 @@ def test_http_error_includes_body() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(400, text="<error>stdate is invalid</error>")
 
-    client = httpx.Client(transport=httpx.MockTransport(handler))
-    source = KopisSource(client=client, api_key="k", delay=0, backoff=0, today=date(2026, 10, 16))
+    source = _source(httpx.Client(transport=httpx.MockTransport(handler)))
     with pytest.raises(RuntimeError, match="HTTP 400.*stdate is invalid"):
         source.fetch(_spec(), limit=1)
 
@@ -209,8 +200,7 @@ def test_blocked_response_is_retried() -> None:
             return httpx.Response(200, text=LIST_XML)
         return httpx.Response(200, text=DETAILS[request.url.path.rsplit("/", 1)[-1]])
 
-    client = httpx.Client(transport=httpx.MockTransport(handler))
-    source = KopisSource(client=client, api_key="k", delay=0, backoff=0, today=date(2026, 10, 16))
+    source = _source(httpx.Client(transport=httpx.MockTransport(handler)))
     items = source.fetch(_spec(), limit=10)
     assert len(items) == 3
     assert calls["n"] >= 2
@@ -218,13 +208,38 @@ def test_blocked_response_is_retried() -> None:
 
 def test_time_budget_stops_early() -> None:
     requests: list[httpx.Request] = []
-    source = KopisSource(
-        client=_client(requests),
-        api_key="k",
-        delay=0,
-        backoff=0,
-        today=date(2026, 10, 16),
-        time_budget=-1,  # 시작하자마자 예산 초과
-    )
+    source = _source(_client(requests), time_budget=-1)  # 시작하자마자 예산 초과
     assert source.fetch(_spec(), limit=10) == []
     assert requests == []
+
+
+def test_cache_skips_detail_calls_on_second_run(tmp_path) -> None:
+    cache_path = tmp_path / "kopis_cache.json"
+
+    first: list[httpx.Request] = []
+    items = _source(_client(first), cache_path=cache_path).fetch(_spec(), limit=10)
+    assert len(items) == 3
+    assert sum(1 for r in first if not r.url.path.endswith("/pblprfr")) == 4
+    assert cache_path.exists()
+
+    second: list[httpx.Request] = []
+    items = _source(_client(second), cache_path=cache_path).fetch(_spec(), limit=10)
+    assert [i.title for i in items] == [
+        "손열음 피아노 리사이틀",
+        "KBS교향악단 제832회 정기연주회",
+        "손열음 부산 리사이틀",
+    ]
+    # 두 번째는 목록만 부르고 상세는 캐시에서
+    assert sum(1 for r in second if not r.url.path.endswith("/pblprfr")) == 0
+    assert items[0].url == "https://tickets.interpark.com/1"
+
+
+def test_cache_expires_after_cache_days(tmp_path) -> None:
+    cache_path = tmp_path / "kopis_cache.json"
+    cache_path.write_text(
+        '{"PF3": {"checked": "2026-08-01", "matched": [], "detail": null}}', encoding="utf-8"
+    )
+    requests: list[httpx.Request] = []
+    _source(_client(requests), cache_path=cache_path).fetch(_spec(), limit=10)
+    # 오래된 캐시는 버려져 PF3 상세를 다시 조회한다
+    assert any(r.url.path.endswith("/PF3") for r in requests)
