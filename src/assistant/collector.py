@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 
-from assistant.models import InterestDigest, Settings
+from assistant.models import InterestDigest, Item, Settings
 from assistant.sources import get_source
 
 log = logging.getLogger(__name__)
@@ -21,6 +22,14 @@ def collect(settings: Settings) -> list[InterestDigest]:
                 log.warning("수집 실패: %s (%s): %s", spec.url, interest.name, exc)
                 continue
             digest.items.extend(items)
-        digest.items.sort(key=lambda i: i.published or 0, reverse=True)  # type: ignore[arg-type]
+        digest.items.sort(key=_sort_key, reverse=True)
         digests.append(digest)
     return digests
+
+
+_OLDEST = datetime.min.replace(tzinfo=UTC)
+
+
+def _sort_key(item: Item) -> datetime:
+    """최신순 정렬. 날짜 없는 항목은 맨 뒤로."""
+    return item.published or _OLDEST
