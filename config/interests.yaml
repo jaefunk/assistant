@@ -1,15 +1,22 @@
 # 리포트로 받아볼 관심사 목록.
 # 각 항목은 name(제목), sources(수집 소스 목록)로 구성됩니다.
-# source.type 은 src/assistant/sources/ 에 등록된 수집기 이름입니다. 현재 지원: rss
+#
+# source.type:
+#   rss           : url 의 RSS/Atom 피드에서 가져옵니다.
+#   claude_search : Claude 가 웹을 검색해 query 에 맞는 글을 직접 골라옵니다.
+#                   days 로 "최근 며칠 이내" 를 정합니다 (기본 7).
 interests:
   - name: AI / LLM
     sources:
-      - type: rss
-        url: https://github.blog/ai-and-ml/feed/
+      - type: claude_search
+        query: LLM, AI 에이전트, 주요 AI 모델 출시 소식
+        days: 7
       - type: rss
         url: https://hnrss.org/newest?q=LLM&points=50
   - name: Python
     sources:
+      - type: claude_search
+        query: Python 언어와 생태계(패키징, 주요 라이브러리 릴리스) 소식
       - type: rss
         url: https://planetpython.org/rss20.xml
 

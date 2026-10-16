@@ -8,10 +8,15 @@ from datetime import datetime
 
 @dataclass(frozen=True)
 class SourceSpec:
-    """config/interests.yaml 의 source 한 항목."""
+    """config/interests.yaml 의 source 한 항목.
+
+    rss 는 url 을, claude_search 는 query 를 쓴다.
+    """
 
     type: str
-    url: str
+    url: str = ""
+    query: str = ""
+    days: int = 7
 
 
 @dataclass(frozen=True)
