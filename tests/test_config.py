@@ -32,3 +32,28 @@ def test_empty_interests_rejected(tmp_path: Path) -> None:
 def test_repo_config_is_valid() -> None:
     settings = load_settings(Path(__file__).parent.parent / "config" / "interests.yaml")
     assert settings.interests
+
+
+def test_claude_search_source_parses_query_and_days(tmp_path: Path) -> None:
+    cfg = tmp_path / "interests.yaml"
+    cfg.write_text(
+        "interests:\n"
+        "  - name: AI\n"
+        "    sources:\n"
+        "      - type: claude_search\n"
+        "        query: LLM 소식\n"
+        "        days: 3\n",
+        encoding="utf-8",
+    )
+    spec = load_settings(cfg).interests[0].sources[0]
+    assert (spec.type, spec.query, spec.days, spec.url) == ("claude_search", "LLM 소식", 3, "")
+
+
+def test_source_without_url_or_query_rejected(tmp_path: Path) -> None:
+    cfg = tmp_path / "interests.yaml"
+    cfg.write_text(
+        "interests:\n  - name: AI\n    sources:\n      - type: rss\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError):
+        load_settings(cfg)

@@ -1,7 +1,7 @@
 # assistant
 
 GitHub Actions 로 정기 실행되는 **관심사 정보 리포트** 서비스입니다.
-`config/interests.yaml` 에 적어 둔 관심사별로 소스(RSS 등)를 수집하고, Claude 로 요약해
+`config/interests.yaml` 에 적어 둔 관심사별로 소스(RSS, Claude 웹 검색)를 수집하고, Claude 로 요약해
 `reports/YYYY-MM-DD.md` 로 저장한 뒤 **매일 아침 8시(KST)에 메일로 보냅니다.**
 
 ## 동작 흐름
@@ -57,6 +57,27 @@ uv run pytest            # 테스트
 Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다. 465 포트는 SSL, 그 외는 STARTTLS 로 접속합니다.
 
 등록 후 Actions 탭 → `Interest Report` → **Run workflow** 로 바로 한 번 보내 보세요.
+
+## 소스 종류
+
+| type | 설정 | 동작 |
+| --- | --- | --- |
+| `rss` | `url` | RSS/Atom 피드에서 최신 항목을 가져옵니다 |
+| `claude_search` | `query`, `days`(기본 7) | Claude 가 웹을 검색해 최근 `days`일 이내 글을 직접 골라옵니다. `ANTHROPIC_API_KEY` 필요 |
+
+```yaml
+interests:
+  - name: AI / LLM
+    sources:
+      - type: claude_search
+        query: LLM, AI 에이전트, 주요 AI 모델 출시 소식
+        days: 7
+      - type: rss
+        url: https://hnrss.org/newest?q=LLM&points=50
+```
+
+`claude_search` 는 관심사마다 Claude 호출 한 번에 웹 검색을 최대 6회 씁니다. 웹 검색은 검색 1,000회당 $10 과 토큰 비용이 듭니다.
+검색 실패나 API 오류는 경고만 남기고 다른 소스로 계속 진행합니다.
 
 ## 새 소스 추가하기
 

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from assistant.sources.base import Source
+from assistant.sources.claude_search import ClaudeSearchSource
 from assistant.sources.rss import RssSource
 
 REGISTRY: dict[str, type] = {
     "rss": RssSource,
+    "claude_search": ClaudeSearchSource,
 }
 
 

@@ -26,7 +26,19 @@ def _parse_interest(entry: dict) -> Interest:
     name = entry.get("name")
     if not name:
         raise ValueError("interest 항목에 'name' 이 필요합니다.")
-    sources = tuple(
-        SourceSpec(type=str(s["type"]), url=str(s["url"])) for s in entry.get("sources", [])
-    )
+    sources = tuple(_parse_source(s, str(name)) for s in entry.get("sources", []))
     return Interest(name=str(name), sources=sources)
+
+
+def _parse_source(raw: dict, interest_name: str) -> SourceSpec:
+    spec = SourceSpec(
+        type=str(raw.get("type", "")),
+        url=str(raw.get("url", "") or ""),
+        query=str(raw.get("query", "") or ""),
+        days=int(raw.get("days", 7)),
+    )
+    if not spec.type:
+        raise ValueError(f"{interest_name}: source 에 'type' 이 필요합니다.")
+    if not (spec.url or spec.query):
+        raise ValueError(f"{interest_name}: source 에 'url' 또는 'query' 가 필요합니다.")
+    return spec
