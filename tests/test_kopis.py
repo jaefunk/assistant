@@ -214,3 +214,17 @@ def test_blocked_response_is_retried() -> None:
     items = source.fetch(_spec(), limit=10)
     assert len(items) == 3
     assert calls["n"] >= 2
+
+
+def test_time_budget_stops_early() -> None:
+    requests: list[httpx.Request] = []
+    source = KopisSource(
+        client=_client(requests),
+        api_key="k",
+        delay=0,
+        backoff=0,
+        today=date(2026, 10, 16),
+        time_budget=-1,  # 시작하자마자 예산 초과
+    )
+    assert source.fetch(_spec(), limit=10) == []
+    assert requests == []

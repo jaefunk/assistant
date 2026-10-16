@@ -44,6 +44,7 @@ DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
 MAX_DETAIL_CALLS = 60
+TIME_BUDGET_SECONDS = 600.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
 BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
@@ -57,6 +58,7 @@ class KopisSource:
         delay: float = 7.0,
         backoff: float = 30.0,
         today: date | None = None,
+        time_budget: float = TIME_BUDGET_SECONDS,
     ) -> None:
         self._client = client or httpx.Client(
             timeout=20.0,
@@ -67,6 +69,8 @@ class KopisSource:
         self._delay = delay
         self._backoff = backoff
         self._today = today
+        self._time_budget = time_budget
+        self._started = 0.0
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
         api_key = (self._api_key or os.environ.get("KOPIS_API_KEY") or "").strip()
@@ -78,11 +82,14 @@ class KopisSource:
         today = self._today or date.today()
         after = today - timedelta(days=spec.since_days)
         genres = spec.genres or DEFAULT_GENRES
+        self._started = time.monotonic()
 
         # 1) 목록: 장르 × 31일 구간을 돌며 최근 등록·수정된 공연을 모은다 (mt20id 로 중복 제거)
         candidates: dict[str, dict[str, str]] = {}
         for genre in genres:
             for start, end in date_chunks(today, spec.days, CHUNK_DAYS):
+                if self._over_budget():
+                    break
                 for perf in self._list(api_key, start, end, genre, after):
                     if not in_areas(spec.areas, perf.get("area", "")):
                         continue
@@ -94,6 +101,8 @@ class KopisSource:
         items: list[Item] = []
         detail_calls = 0
         for mt20id, perf in candidates.items():
+            if self._over_budget():
+                break
             matched = match_names(spec.names, perf.get("prfnm", ""))
             detail: dict[str, object] | None = None
             if not matched:
@@ -116,6 +125,13 @@ class KopisSource:
             if len(items) >= limit:
                 break
         return items
+
+    def _over_budget(self) -> bool:
+        elapsed = time.monotonic() - self._started
+        if elapsed <= self._time_budget:
+            return False
+        log.warning("kopis: 시간 예산 %.0f초 초과, 여기까지 모은 것만 씁니다.", self._time_budget)
+        return True
 
     # --- HTTP ---------------------------------------------------------------
 
