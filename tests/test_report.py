@@ -42,3 +42,12 @@ def test_render_item_without_url_is_plain_text() -> None:
     md = render([digest], date(2026, 1, 1))
     assert "- 링크 없음\n" in md
     assert "]()" not in md
+
+
+def test_render_item_details_on_second_line() -> None:
+    digest = InterestDigest(
+        interest=Interest(name="공연", sources=()),
+        items=[Item(title="리사이틀", url="https://x/r", details="출연 손열음 · 예술의전당")],
+    )
+    md = render([digest], date(2026, 1, 1))
+    assert "- [리사이틀](https://x/r)  \n  출연 손열음 · 예술의전당\n" in md

@@ -25,7 +25,11 @@ def render(digests: list[InterestDigest], report_date: date) -> str:
         for item in digest.items:
             when = f" · {item.published:%Y-%m-%d}" if item.published else ""
             label = f"[{item.title}]({item.url})" if item.url else item.title
-            lines.append(f"- {label}{when}")
+            if item.details:
+                lines.append(f"- {label}{when}  ")  # 끝의 공백 두 개 = Markdown 줄바꿈
+                lines.append(f"  {item.details}")
+            else:
+                lines.append(f"- {label}{when}")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
