@@ -17,9 +17,9 @@ API 메모 (가이드 v5.0 기준):
 - 상세 GET {BASE}/pblprfr/{mt20id}?service=KEY → prfcast, prfcrew, pcseguidance,
   dtguidance, relates/relate/relatenm/relateurl 등.
 - 오류도 HTTP 200 으로 오고 본문에 <returncode>, <errmsg> 가 있다.
-- 초당 10회 이상 호출하면 서비스가 중지된다. 실제로는 0.2초 간격으로 5번째 요청부터
-  방화벽이 'Request Blocked'(HTTP 400 HTML) 로 막았으므로 5초 간격을 두고, 막히면
-  10초 쉬었다가 다시 시도한다. 하루 한 번 도는 작업이라 느려도 된다.
+- 방화벽이 성공 요청 기준 분당 10회를 넘으면 'Request Blocked'(HTTP 400 HTML) 로 막고,
+  그 1분 창이 끝날 때까지 계속 막는다 (2026-10 실측). 그래서 7초 간격(분당 8~9회)을
+  두고, 막히면 30초 쉬었다가 다시 시도한다. 하루 한 번 도는 작업이라 느려도 된다.
   python-httpx 기본 User-Agent 도 400 으로 막힌다.
 - 이용약관상 출처 표기가 의무다 (Item.attribution 으로 리포트 끝에 표시).
 """
@@ -43,7 +43,7 @@ BASE_URL = os.environ.get("KOPIS_BASE_URL", "http://www.kopis.or.kr/openApi/rest
 DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
-MAX_DETAIL_CALLS = 100
+MAX_DETAIL_CALLS = 60
 BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
@@ -54,8 +54,8 @@ class KopisSource:
         self,
         client: httpx.Client | None = None,
         api_key: str | None = None,
-        delay: float = 5.0,
-        backoff: float = 10.0,
+        delay: float = 7.0,
+        backoff: float = 30.0,
         today: date | None = None,
     ) -> None:
         self._client = client or httpx.Client(
