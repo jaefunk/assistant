@@ -36,9 +36,22 @@ def _parse_source(raw: dict, interest_name: str) -> SourceSpec:
         url=str(raw.get("url", "") or ""),
         query=str(raw.get("query", "") or ""),
         days=int(raw.get("days", 7)),
+        names=_str_tuple(raw.get("names")),
+        genres=_str_tuple(raw.get("genres")),
+        since_days=int(raw.get("since_days", 1)),
     )
     if not spec.type:
         raise ValueError(f"{interest_name}: source 에 'type' 이 필요합니다.")
-    if not (spec.url or spec.query):
-        raise ValueError(f"{interest_name}: source 에 'url' 또는 'query' 가 필요합니다.")
+    if not (spec.url or spec.query or spec.names):
+        raise ValueError(
+            f"{interest_name}: source 에 'url', 'query', 'names' 중 하나가 필요합니다."
+        )
     return spec
+
+
+def _str_tuple(value) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        value = value.split(",")
+    return tuple(str(v).strip() for v in value if str(v).strip())

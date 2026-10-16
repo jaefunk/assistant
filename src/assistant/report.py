@@ -12,6 +12,7 @@ DEFAULT_OUTPUT_DIR = Path("reports")
 
 def render(digests: list[InterestDigest], report_date: date) -> str:
     lines = [f"# 관심사 리포트 {report_date.isoformat()}", ""]
+    attributions: list[str] = []
     for digest in digests:
         lines.append(f"## {digest.interest.name}")
         lines.append("")
@@ -23,10 +24,19 @@ def render(digests: list[InterestDigest], report_date: date) -> str:
             lines.append("")
             continue
         for item in digest.items:
+            if item.attribution and item.attribution not in attributions:
+                attributions.append(item.attribution)
             when = f" · {item.published:%Y-%m-%d}" if item.published else ""
             label = f"[{item.title}]({item.url})" if item.url else item.title
-            lines.append(f"- {label}{when}")
+            if item.details:
+                lines.append(f"- {label}{when}  ")  # 끝의 공백 두 개 = Markdown 줄바꿈
+                lines.append(f"  {item.details}")
+            else:
+                lines.append(f"- {label}{when}")
         lines.append("")
+    if attributions:
+        lines.append("---")
+        lines.extend(f"_{text}_" for text in attributions)
     return "\n".join(lines).rstrip() + "\n"
 
 

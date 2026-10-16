@@ -1,7 +1,7 @@
 # assistant
 
 GitHub Actions 로 정기 실행되는 **관심사 정보 리포트** 서비스입니다.
-`config/interests.yaml` 에 적어 둔 관심사별로 소스(RSS, Claude 웹 검색)를 수집하고, Claude 로 요약해
+`config/interests.yaml` 에 적어 둔 관심사별로 소스(RSS, Claude 웹 검색, KOPIS 공연전산망)를 수집하고, Claude 로 요약해
 `reports/YYYY-MM-DD.md` 로 저장한 뒤 **매일 아침 8시(KST)에 메일로 보냅니다.**
 
 ## 동작 흐름
@@ -49,6 +49,7 @@ uv run pytest            # 테스트
 | Secret | `SMTP_PASSWORD` | Google 계정 → 보안 → 2단계 인증 → **앱 비밀번호** 로 발급한 16자리 |
 | Secret | `MAIL_TO` | 받는 주소. 여러 명이면 쉼표로 구분 |
 | Secret | `ANTHROPIC_API_KEY` | (선택) 없으면 요약 없이 수집 목록만 발송 |
+| Secret | `KOPIS_API_KEY` | (선택) `kopis` 소스를 쓸 때. 없으면 그 소스만 경고 후 건너뜀 |
 | Variable | `ANTHROPIC_WORKSPACE_ID` | (선택) 키가 워크스페이스에 묶여 있지 않을 때 필요. Console → Workspaces 에서 ID 확인 |
 | Variable | `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM` | (선택) 기본값 `smtp.gmail.com`, `587`, `SMTP_USER` |
 
@@ -64,6 +65,7 @@ Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다.
 | --- | --- | --- |
 | `rss` | `url` | RSS/Atom 피드에서 최신 항목을 가져옵니다 |
 | `claude_search` | `query`, `days`(기본 7) | Claude 가 웹을 검색해 최근 `days`일 이내 글을 직접 골라옵니다. `ANTHROPIC_API_KEY` 필요 |
+| `kopis` | `names`, `genres`(기본 클래식·대중음악), `days`(앞으로 며칠, 기본 7), `since_days`(기본 1) | 공연예술통합전산망에서 `names` 의 사람이 출연하는 공연 중 최근 `since_days`일 안에 등록·수정된 것을 가져옵니다. `KOPIS_API_KEY` 필요 |
 
 ```yaml
 interests:
@@ -75,6 +77,19 @@ interests:
       - type: rss
         url: https://hnrss.org/newest?q=LLM&points=50
 ```
+
+```yaml
+  - name: 공연 소식
+    sources:
+      - type: kopis
+        names: [손열음, 조성진, 정명훈]
+        days: 180
+        since_days: 1
+```
+
+`kopis` 는 국내에서 티켓을 파는 공연이 의무 등록되는 전산망을 보므로 국내 공연은 거의 빠짐없이 잡힙니다. 해외 공연은 없습니다.
+키는 [kopis.or.kr](https://www.kopis.or.kr) 오픈API 신청으로 무료 발급받아 Secret `KOPIS_API_KEY` 로 등록하세요.
+초당 10회 넘게 부르면 차단되므로 호출 사이에 0.2초를 둡니다. 장르 코드: `CCCA` 클래식, `CCCD` 대중음악, `CCCC` 국악, `GGGA` 뮤지컬, `AAAA` 연극, `BBBC` 무용.
 
 `claude_search` 는 관심사마다 Claude 호출 한 번에 웹 검색을 최대 6회 씁니다. 웹 검색은 검색 1,000회당 $10 과 토큰 비용이 듭니다.
 검색 실패나 API 오류는 경고만 남기고 다른 소스로 계속 진행합니다.

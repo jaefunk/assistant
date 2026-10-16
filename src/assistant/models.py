@@ -10,13 +10,16 @@ from datetime import datetime
 class SourceSpec:
     """config/interests.yaml 의 source 한 항목.
 
-    rss 는 url 을, claude_search 는 query 를 쓴다.
+    rss 는 url 을, claude_search 는 query 를, kopis 는 names 를 쓴다.
     """
 
     type: str
     url: str = ""
     query: str = ""
     days: int = 7
+    names: tuple[str, ...] = ()
+    genres: tuple[str, ...] = ()
+    since_days: int = 1
 
 
 @dataclass(frozen=True)
@@ -40,7 +43,9 @@ class Item:
     title: str
     url: str
     published: datetime | None = None
-    summary: str = ""
+    summary: str = ""  # 요약 모델에 넘길 설명. 리포트에는 안 보임
+    details: str = ""  # 리포트에 제목 아래 한 줄로 보여줄 정보 (장소, 기간, 가격 등)
+    attribution: str = ""  # 데이터 출처 표기 의무가 있는 소스의 문구. 리포트 끝에 모아 표시
 
 
 @dataclass

@@ -57,3 +57,22 @@ def test_source_without_url_or_query_rejected(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError):
         load_settings(cfg)
+
+
+def test_kopis_source_parses_names_and_genres(tmp_path: Path) -> None:
+    cfg = tmp_path / "interests.yaml"
+    cfg.write_text(
+        "interests:\n"
+        "  - name: 공연\n"
+        "    sources:\n"
+        "      - type: kopis\n"
+        "        names: [손열음, 조성진]\n"
+        "        genres: CCCA, CCCD\n"
+        "        days: 90\n"
+        "        since_days: 2\n",
+        encoding="utf-8",
+    )
+    spec = load_settings(cfg).interests[0].sources[0]
+    assert spec.names == ("손열음", "조성진")
+    assert spec.genres == ("CCCA", "CCCD")
+    assert (spec.days, spec.since_days) == (90, 2)

@@ -5,6 +5,8 @@
 #   rss           : url 의 RSS/Atom 피드에서 가져옵니다.
 #   claude_search : Claude 가 웹을 검색해 query 에 맞는 글을 직접 골라옵니다.
 #                   days 로 "최근 며칠 이내" 를 정합니다 (기본 7).
+#   kopis         : 공연예술통합전산망(KOPIS)에서 names 의 사람이 출연하는 공연 중
+#                   최근 since_days 일 안에 등록·수정된 것을 가져옵니다. KOPIS_API_KEY 필요.
 interests:
   - name: AI / LLM
     sources:
@@ -19,6 +21,16 @@ interests:
         query: Python 언어와 생태계(패키징, 주요 라이브러리 릴리스) 소식
       - type: rss
         url: https://planetpython.org/rss20.xml
+  - name: 공연 소식
+    sources:
+      - type: kopis
+        names: [손열음, 조성진, 백건우, 정명훈, 송하예, 이예준, 신예영, 정승환]
+        genres: [CCCA, CCCD]   # 클래식, 대중음악
+        days: 180              # 앞으로 6개월치 공연 중
+        since_days: 1          # 어제 이후 등록·수정된 것만
+      - type: claude_search
+        query: 손열음 조성진 백건우 정명훈 송하예 이예준 신예영 정승환 공연 티켓 오픈 또는 새 공연 발표
+        days: 2
 
 # 각 소스에서 최대 몇 개 항목을 가져올지
 max_items_per_source: 10

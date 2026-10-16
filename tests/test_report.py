@@ -42,3 +42,30 @@ def test_render_item_without_url_is_plain_text() -> None:
     md = render([digest], date(2026, 1, 1))
     assert "- 링크 없음\n" in md
     assert "]()" not in md
+
+
+def test_render_item_details_on_second_line() -> None:
+    digest = InterestDigest(
+        interest=Interest(name="공연", sources=()),
+        items=[Item(title="리사이틀", url="https://x/r", details="출연 손열음 · 예술의전당")],
+    )
+    md = render([digest], date(2026, 1, 1))
+    assert "- [리사이틀](https://x/r)  \n  출연 손열음 · 예술의전당\n" in md
+
+
+def test_render_appends_attribution_footer_once() -> None:
+    items = [
+        Item(title="A", url="https://x/a", attribution="출처: KOPIS"),
+        Item(title="B", url="https://x/b", attribution="출처: KOPIS"),
+    ]
+    digest = InterestDigest(interest=Interest(name="공연", sources=()), items=items)
+    md = render([digest], date(2026, 1, 1))
+    assert md.count("출처: KOPIS") == 1
+    assert md.endswith("---\n_출처: KOPIS_\n")
+
+
+def test_render_without_attribution_has_no_footer() -> None:
+    digest = InterestDigest(
+        interest=Interest(name="AI", sources=()), items=[Item("A", "https://x")]
+    )
+    assert "---" not in render([digest], date(2026, 1, 1))
