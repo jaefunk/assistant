@@ -34,7 +34,6 @@ def parse_feed(text: str, limit: int) -> list[Item]:
                 title=entry.get("title", "(제목 없음)").strip(),
                 url=entry.get("link", ""),
                 published=published,
-                summary=entry.get("summary", ""),
             )
         )
     return items

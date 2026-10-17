@@ -1,15 +1,12 @@
 # 리포트로 받아볼 관심사 목록.
-# 각 항목은 name(제목), sources(수집 소스 목록), summarize(Claude 요약 여부, 기본 true)로 구성됩니다.
+# 각 항목은 name(제목), sources(수집 소스 목록)로 구성됩니다.
 #
 # source.type:
 #   rss           : url 의 RSS/Atom 피드에서 가져옵니다.
-#   claude_search : Claude 가 웹을 검색해 query 에 맞는 글을 직접 골라옵니다.
-#                   days 로 "최근 며칠 이내" 를 정합니다 (기본 7).
 #   kopis         : 공연예술통합전산망(KOPIS) 공연 장부(data/)를 증분 동기화해 names 의 사람이
 #                   출연하는 공연 중 새로 올라오거나 바뀐 것을 가져옵니다. KOPIS_API_KEY 필요.
 interests:
   - name: 공연 소식
-    summarize: false   # 공연은 요약 대신 목록 그대로. 예정 공연 전체도 함께 표시됨
     sources:
       - type: kopis
         names: [손열음, 조성진, 백건우, 정명훈, 임윤찬, 송하예, 이예준, 신예영, 정승환]

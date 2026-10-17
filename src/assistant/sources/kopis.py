@@ -14,8 +14,6 @@
   리포트 실행(fetch)이 그것들을 싣고 표시를 지운다. 동기화 전용 실행(sync)은 장부만 맞추므로
   새벽에 찾은 공연도 아침 메일에 실린다.
 - 리포트에는 그 외에 names 의 예정 공연 전체를 standing 항목(날짜순, D-day)으로 함께 준다.
-- 새로 잡힌 공연은 Claude 웹 검색 한 번으로 티켓 오픈 일시를 찾아 붙인다 (ANTHROPIC_API_KEY
-  가 있을 때만, 실행당 최대 10건. KOPIS 시간 예산과 무관).
 워크플로가 data/ 를 커밋하므로 장부는 날마다 이어진다. KOPIS_FULL_SYNC=1 이면 장부가
 있어도 전체 동기화를 한 번 다시 한다.
 
@@ -44,7 +42,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import time
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
@@ -62,7 +59,6 @@ DEFAULT_GENRES = ("CCCA", "CCCD")  # 서양음악(클래식), 대중음악
 CHUNK_DAYS = 31
 ROWS = 100
 MAX_DETAIL_CALLS = 150
-MAX_TICKET_LOOKUPS = 10  # 실행당 티켓 오픈 일시 웹 검색 횟수
 MAX_CONSECUTIVE_BLOCKS = 5  # 상세 조회가 이만큼 연속 차단되면 이번 실행을 멈춘다
 TIME_BUDGET_SECONDS = 1500.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
 STORE_PATH = Path(os.environ.get("KOPIS_STORE_PATH", "data/kopis_performances.json"))
@@ -88,8 +84,6 @@ class KopisSource:
         store_path: Path | None = STORE_PATH,
         full_sync: bool | None = None,
         max_detail: int = MAX_DETAIL_CALLS,
-        claude_client=None,
-        ticket_lookups: int = MAX_TICKET_LOOKUPS,
     ) -> None:
         self._client = client or httpx.Client(
             timeout=20.0,
@@ -105,8 +99,6 @@ class KopisSource:
         self._store_path = store_path
         self._full_sync = full_sync
         self._max_detail = max_detail
-        self._claude_client = claude_client
-        self._ticket_lookups = ticket_lookups
 
     def fetch(self, spec: SourceSpec, limit: int) -> list[Item]:
         """장부를 동기화한 뒤 보고 대기 공연(새 소식)과 예정 공연 전체(standing)를 돌려준다."""
@@ -236,34 +228,12 @@ class KopisSource:
                 entry["detail"] = detail if matched else None
                 if matched:
                     entry["pending_report"] = True
-            # 3) 새로 잡힌 공연은 티켓 오픈 일시를 웹에서 찾아 둔다
-            self._lookup_ticket_open(performances)
         finally:
             if listing_complete:
                 store["last_sync"] = today.isoformat()
             save_store(self._store_path, store)
         log.info("kopis: 상세 조회 %d회", detail_calls)
         return today, store
-
-    def _lookup_ticket_open(self, performances: dict[str, dict]) -> None:
-        targets = [
-            (k, v)
-            for k, v in performances.items()
-            if v.get("pending_report") and v.get("matched") and "ticket_open" not in v
-        ]
-        if not targets:
-            return
-        client = self._claude_client
-        if client is None:
-            from assistant.claude import make_client
-
-            client = make_client()
-        if client is None:
-            return
-        # KOPIS 가 아닌 Claude 호출이라 KOPIS 시간 예산과 무관하게 돈다 (건수 상한으로만 제한)
-        for mt20id, entry in targets[: self._ticket_lookups]:
-            entry["ticket_open"] = lookup_ticket_open(client, entry)
-            log.info("kopis: 티켓 오픈 검색 %s → %s", mt20id, entry["ticket_open"] or "정보 없음")
 
     def _over_budget(self) -> bool:
         elapsed = time.monotonic() - self._started
@@ -346,8 +316,7 @@ def load_store(path: Path | None, today: date) -> dict:
             if isinstance(v, dict) and (not v.get("prfpdto") or v["prfpdto"] >= cutoff)
         }
         for v in store["performances"].values():
-            if v.get("ticket_open"):
-                v["ticket_open"] = clean_ticket_open(v["ticket_open"])  # 예전에 저장된 찌꺼기 정리
+            v.pop("ticket_open", None)  # 예전 버전이 웹 검색으로 붙이던 값. 더는 쓰지 않는다
     return store
 
 
@@ -386,60 +355,6 @@ def save_store(path: Path | None, store: dict) -> None:
     path.write_text(
         json.dumps(store, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8"
     )
-
-
-# --- 티켓 오픈 일시 검색 ---------------------------------------------------------
-
-
-def lookup_ticket_open(client, entry: dict) -> str:
-    """Claude 웹 검색으로 티켓 오픈(예매 시작) 일시를 한 줄로 찾는다. 못 찾으면 빈 문자열."""
-    from anthropic import APIError
-
-    from assistant.claude import DEFAULT_MODEL, FALLBACK_BETA
-
-    where = f"{entry.get('fcltynm', '')}, {entry.get('prfpdfrom', '')}"
-    prompt = (
-        f"공연 '{entry.get('prfnm', '')}' ({where}) 의 티켓 오픈(예매 시작) 일시를 웹에서 "
-        "찾아 주세요. 선예매와 일반 예매가 다르면 둘 다 적습니다. "
-        "최종 답변은 설명 없이 한 줄만, 예: '일반 예매 2026-10-20 14:00 (인터파크)'. "
-        "확실한 정보가 없으면 정확히 '정보 없음' 이라고만 답하세요."
-    )
-    try:
-        response = client.beta.messages.create(
-            model=DEFAULT_MODEL,
-            max_tokens=2000,
-            betas=[FALLBACK_BETA],
-            fallbacks="default",
-            tools=[{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}],
-            messages=[{"role": "user", "content": prompt}],
-        )
-    except APIError as exc:
-        log.warning("kopis: 티켓 오픈 검색 실패 (%s): %s", entry.get("prfnm", ""), exc)
-        return ""
-    if response.stop_reason == "refusal":
-        return ""
-    text = "".join(b.text for b in response.content if b.type == "text").strip()
-    return clean_ticket_open(text)
-
-
-_TICKET_OPEN_START = re.compile(
-    r"(선예매|일반\s*예매|티켓\s*오픈|예매\s*시작|\d{4}[-./]\d{1,2}[-./]\d{1,2})"
-)
-
-
-def clean_ticket_open(text: str) -> str:
-    """모델 답변에서 티켓 오픈 문구만 남긴다.
-
-    마지막 줄을 쓰되, 앞에 섞인 영어 메모 같은 찌꺼기는 첫 '선예매/일반 예매/날짜' 앞까지 잘라낸다.
-    정보가 없다고 했거나 날짜·예매 표현이 전혀 없으면 빈 문자열.
-    """
-    line = text.strip().splitlines()[-1].strip() if text.strip() else ""
-    if not line or "정보 없음" in line:
-        return ""
-    match = _TICKET_OPEN_START.search(line)
-    if not match:
-        return ""
-    return line[match.start() :][:200]
 
 
 # --- 순수 함수 (테스트 대상) --------------------------------------------------
@@ -511,22 +426,16 @@ def to_item(
         str(detail.get("dtguidance", "")),
         str(detail.get("pcseguidance", "")),
         f"예매 {ticket_sites}" if ticket_sites else "",
-        f"티켓 오픈 {perf.get('ticket_open')}" if perf.get("ticket_open") else "",
     ]
     details = " · ".join(p for p in parts if p)
     if standing:
-        # 예정 목록은 짧게: 출연, 장소, 티켓 오픈만
-        short = [
-            f"출연 {', '.join(matched)}",
-            perf.get("fcltynm", ""),
-            f"티켓 오픈 {perf.get('ticket_open')}" if perf.get("ticket_open") else "",
-        ]
+        # 예정 목록은 짧게: 출연, 장소만
+        short = [f"출연 {', '.join(matched)}", perf.get("fcltynm", "")]
         details = " · ".join(p for p in short if p)
     return Item(
         title=perf.get("prfnm") or "(제목 없음)",
         url=first_link or PUBLIC_PAGE.format(mt20id=mt20id),
         published=_parse_datetime(str(detail.get("updatedate") or detail.get("frstregdt") or "")),
-        summary=details,
         details=details,
         attribution=ATTRIBUTION,
         standing=standing,

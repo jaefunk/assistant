@@ -1,4 +1,4 @@
-"""수집/요약 결과를 Markdown 리포트로 렌더링하고 파일로 저장한다."""
+"""수집 결과를 Markdown 리포트로 렌더링하고 파일로 저장한다."""
 
 from __future__ import annotations
 
@@ -23,9 +23,6 @@ def render(digests: list[InterestDigest], report_date: date) -> str:
                 attributions.append(item.attribution)
         lines.append(f"## {digest.interest.name}")
         lines.append("")
-        if digest.summary:
-            lines.append(digest.summary)
-            lines.append("")
         if not news:
             lines.append(
                 "_새로 올라온 항목이 없습니다._" if standing else "_수집된 항목이 없습니다._"

@@ -11,7 +11,6 @@ def _digest() -> InterestDigest:
         items=[
             Item(title="Hello", url="https://x/1", published=datetime(2026, 10, 16, tzinfo=UTC))
         ],
-        summary="- 요약 한 줄",
     )
 
 
@@ -19,7 +18,6 @@ def test_render_contains_sections() -> None:
     md = render([_digest()], date(2026, 10, 16))
     assert md.startswith("# 관심사 리포트 2026-10-16")
     assert "## AI" in md
-    assert "- 요약 한 줄" in md
     assert "[Hello](https://x/1) · 2026-10-16" in md
 
 

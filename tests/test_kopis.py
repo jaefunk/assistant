@@ -8,7 +8,6 @@ from assistant.models import SourceSpec
 from assistant.sources import get_source
 from assistant.sources.kopis import (
     KopisSource,
-    clean_ticket_open,
     date_chunks,
     in_areas,
     load_store,
@@ -382,52 +381,6 @@ def test_sync_keeps_pending_report_until_fetch(tmp_path) -> None:
     assert len(_standing(items)) == 3
 
 
-class _FakeClaude:
-    """티켓 오픈 검색용 가짜 클라이언트. 호출된 프롬프트를 기록한다."""
-
-    def __init__(self, answer: str) -> None:
-        self.answer = answer
-        self.prompts: list[str] = []
-        self.beta = type("B", (), {})()
-        self.beta.messages = self
-
-    def create(self, **kwargs):
-        from types import SimpleNamespace
-
-        self.prompts.append(kwargs["messages"][0]["content"])
-        return SimpleNamespace(
-            stop_reason="end_turn",
-            content=[SimpleNamespace(type="text", text=self.answer)],
-        )
-
-
-def test_ticket_open_lookup_is_attached_once(tmp_path) -> None:
-    store_path = tmp_path / "store.json"
-    claude = _FakeClaude("검색 결과입니다.\n일반 예매 2026-10-01 14:00 (인터파크)")
-    items = _source(_client([]), store_path=store_path, claude_client=claude).fetch(
-        _spec(), limit=10
-    )
-    news = _news(items)
-    assert "티켓 오픈 일반 예매 2026-10-01 14:00 (인터파크)" in news[0].details
-    assert len(claude.prompts) == 3  # 맞은 공연 3건, 각 1회
-    assert "손열음 피아노 리사이틀" in claude.prompts[0]
-
-    # 다음 실행에서는 다시 검색하지 않는다
-    claude2 = _FakeClaude("정보 없음")
-    _source(
-        _client([], list_xml="<dbs></dbs>"), store_path=store_path, claude_client=claude2
-    ).fetch(_spec(), limit=10)
-    assert claude2.prompts == []
-
-
-def test_ticket_open_lookup_no_info_is_empty(tmp_path) -> None:
-    claude = _FakeClaude("정보 없음")
-    items = _source(_client([]), store_path=tmp_path / "s.json", claude_client=claude).fetch(
-        _spec(), limit=10
-    )
-    assert "티켓 오픈" not in _news(items)[0].details
-
-
 # --- 이름 목록 변경 ---------------------------------------------------------------
 
 
@@ -486,22 +439,7 @@ def test_legacy_entry_without_cast_is_rechecked(tmp_path) -> None:
     assert [i.title for i in _news(items)] == ["KBS교향악단 제832회 정기연주회"]
 
 
-def test_ticket_open_lookup_runs_even_when_kopis_budget_is_spent(tmp_path) -> None:
-    """긴 동기화로 KOPIS 예산을 다 써도 티켓 오픈 검색은 돈다 (Claude 호출이라 예산과 무관)."""
-    store_path = tmp_path / "s.json"
-    # 먼저 장부를 만들어 보고 대기 공연을 남겨 둔다
-    _source(_client([]), store_path=store_path).sync(_spec())
-    claude = _FakeClaude("일반 예매 2026-10-01 14:00")
-    _source(
-        _client([], list_xml="<dbs></dbs>"),
-        store_path=store_path,
-        claude_client=claude,
-        time_budget=-1,
-    ).sync(_spec())
-    assert len(claude.prompts) == 3
-
-
-# --- 차단 내성, 티켓 오픈 정리, 예정 목록 축약 ------------------------------------------
+# --- 차단 내성, 예정 목록 축약 ------------------------------------------
 
 
 def test_persistently_blocked_detail_is_skipped_and_sync_continues(tmp_path) -> None:
@@ -525,37 +463,22 @@ def test_persistently_blocked_detail_is_skipped_and_sync_continues(tmp_path) -> 
     assert store["last_sync"] == "2026-10-16"
 
 
-def test_clean_ticket_open_strips_leaked_prefix() -> None:
-    junk = (
-        "검색 결과\nNeed times. Print the X content."
-        "팬클럽 선예매 2026-09-10 / 일반 예매 2026-09-14 20:00"
-    )
-    assert clean_ticket_open(junk) == "선예매 2026-09-10 / 일반 예매 2026-09-14 20:00"
-    assert (
-        clean_ticket_open("일반 예매 2026-10-02 16:00 (예스24)")
-        == "일반 예매 2026-10-02 16:00 (예스24)"
-    )
-    assert clean_ticket_open("정보 없음") == ""
-    assert clean_ticket_open("Sorry, I could not find it.") == ""
-    assert clean_ticket_open("") == ""
-
-
 def test_standing_item_details_are_compact() -> None:
     perf = {
         "prfnm": "공연",
         "fcltynm": "홀",
         "prfpdfrom": "2026.11.08",
         "prfpdto": "2026.11.08",
-        "ticket_open": "일반 예매 2026-10-02 16:00",
     }
     detail = {"pcseguidance": "R석 480,000원", "dtguidance": "일요일(17:00)", "relates": []}
     news = to_item("PF1", perf, detail, ["임윤찬"])
     standing = to_item("PF1", perf, detail, ["임윤찬"], standing=True)
     assert "R석 480,000원" in news.details
-    assert standing.details == "출연 임윤찬 · 홀 · 티켓 오픈 일반 예매 2026-10-02 16:00"
+    assert standing.details == "출연 임윤찬 · 홀"
 
 
-def test_load_store_cleans_stored_ticket_open(tmp_path) -> None:
+def test_load_store_drops_legacy_ticket_open(tmp_path) -> None:
+    """예전 버전이 웹 검색으로 붙이던 ticket_open 은 읽을 때 지운다."""
     store_path = tmp_path / "store.json"
     store_path.write_text(
         json.dumps(
@@ -572,4 +495,4 @@ def test_load_store_cleans_stored_ticket_open(tmp_path) -> None:
         encoding="utf-8",
     )
     store = load_store(store_path, TODAY)
-    assert store["performances"]["PF1"]["ticket_open"] == "일반 예매 2026-09-14 20:00"
+    assert "ticket_open" not in store["performances"]["PF1"]

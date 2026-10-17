@@ -7,10 +7,6 @@ on:
     - cron: "30 22 * * *"
   workflow_dispatch:
     inputs:
-      no_summary:
-        description: "Claude 요약 생략 (수집만)"
-        type: boolean
-        default: false
       kopis_full_sync:
         description: "KOPIS 공연 장부 전체 동기화 (장부를 처음 만들거나 다시 맞출 때)"
         type: boolean
@@ -36,8 +32,6 @@ jobs:
 
       - name: Generate report
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
           KOPIS_API_KEY: ${{ secrets.KOPIS_API_KEY }}
           KOPIS_FULL_SYNC: ${{ inputs.kopis_full_sync && '1' || '' }}
           SMTP_HOST: ${{ vars.SMTP_HOST }}
@@ -46,10 +40,7 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
-        run: |
-          FLAGS="--email"
-          if [ "${{ inputs.no_summary }}" = "true" ]; then FLAGS="$FLAGS --no-summary"; fi
-          uv run assistant report $FLAGS
+        run: uv run assistant report --email
 
       - name: Commit report
         run: |

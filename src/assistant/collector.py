@@ -19,7 +19,7 @@ def collect(settings: Settings) -> list[InterestDigest]:
             try:
                 items = get_source(spec.type).fetch(spec, settings.max_items_per_source)
             except Exception as exc:  # 소스 하나가 죽어도 리포트 전체는 나가야 한다
-                label = spec.url or spec.query or ", ".join(spec.names)
+                label = spec.url or ", ".join(spec.names)
                 log.warning("수집 실패: %s %s (%s): %s", spec.type, label, interest.name, exc)
                 digest.failures.append(f"{interest.name} · {spec.type} {label}: {str(exc)[:120]}")
                 continue
