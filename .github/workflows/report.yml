@@ -2,8 +2,9 @@ name: Interest Report
 
 on:
   schedule:
-    # 매일 08:00 KST = 전날 23:00 UTC. GitHub cron 은 UTC 기준이며 몇 분 지연될 수 있다.
-    - cron: "0 23 * * *"
+    # 매일 07:30 KST = 전날 22:30 UTC. GitHub 는 정각 예약을 몰아서 처리해 몇 시간씩 늦어질 수 있어
+    # 정각을 피하고 30분 당겨 둔다 (실측: 23:00 예약이 01:11 에 시작).
+    - cron: "30 22 * * *"
   workflow_dispatch:
     inputs:
       no_summary:

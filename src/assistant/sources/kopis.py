@@ -44,6 +44,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
@@ -62,12 +63,17 @@ CHUNK_DAYS = 31
 ROWS = 100
 MAX_DETAIL_CALLS = 150
 MAX_TICKET_LOOKUPS = 10  # 실행당 티켓 오픈 일시 웹 검색 횟수
+MAX_CONSECUTIVE_BLOCKS = 5  # 상세 조회가 이만큼 연속 차단되면 이번 실행을 멈춘다
 TIME_BUDGET_SECONDS = 1500.0  # 이 시간을 넘기면 그때까지 모은 것만 돌려준다
 STORE_PATH = Path(os.environ.get("KOPIS_STORE_PATH", "data/kopis_performances.json"))
 BLOCKED_MARKER = "Request Blocked"
 PUBLIC_PAGE = "https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?mt20id={mt20id}"
 ATTRIBUTION = "출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)"
 LIST_FIELDS = ("prfnm", "prfpdfrom", "prfpdto", "fcltynm", "area", "genrenm", "prfstate")
+
+
+class KopisBlocked(RuntimeError):
+    """재시도해도 계속 차단된 요청."""
 
 
 class KopisSource:
@@ -191,6 +197,7 @@ class KopisSource:
         # 2) 미확인 공연은 상세(출연진)를 조회한다.
         #    이번에 바뀐 것부터, 그 다음 지난 실행에서 남은 것 순서로.
         detail_calls = 0
+        consecutive_blocks = 0
         order = touched + [k for k in pending if k not in touched]
         try:
             for mt20id in order:
@@ -203,7 +210,19 @@ class KopisSource:
                         detail_calls,
                     )
                     break
-                detail = self._detail(api_key, mt20id)
+                try:
+                    detail = self._detail(api_key, mt20id)
+                except KopisBlocked as exc:
+                    # 한 건이 계속 막히면 건너뛰고 다음 실행에서 다시 본다. 연속으로 막히면 포기.
+                    consecutive_blocks += 1
+                    log.warning("kopis: %s 상세 조회를 건너뜁니다 (%s)", mt20id, exc)
+                    if consecutive_blocks >= MAX_CONSECUTIVE_BLOCKS:
+                        log.warning(
+                            "kopis: %d건 연속 차단되어 이번 실행을 멈춥니다.", consecutive_blocks
+                        )
+                        break
+                    continue
+                consecutive_blocks = 0
                 detail_calls += 1
                 matched = match_names(
                     spec.names,
@@ -302,7 +321,7 @@ class KopisSource:
             if body:
                 return response.text
             log.warning("kopis: 빈 응답 (%s), 재시도 %d", url, attempt)
-        raise RuntimeError(f"kopis: 요청이 계속 실패합니다 ({url})")
+        raise KopisBlocked(f"kopis: 요청이 계속 실패합니다 ({url})")
 
 
 # --- 장부 ---------------------------------------------------------------------
@@ -326,6 +345,9 @@ def load_store(path: Path | None, today: date) -> dict:
             for k, v in raw["performances"].items()
             if isinstance(v, dict) and (not v.get("prfpdto") or v["prfpdto"] >= cutoff)
         }
+        for v in store["performances"].values():
+            if v.get("ticket_open"):
+                v["ticket_open"] = clean_ticket_open(v["ticket_open"])  # 예전에 저장된 찌꺼기 정리
     return store
 
 
@@ -397,10 +419,27 @@ def lookup_ticket_open(client, entry: dict) -> str:
     if response.stop_reason == "refusal":
         return ""
     text = "".join(b.text for b in response.content if b.type == "text").strip()
-    line = text.splitlines()[-1].strip() if text else ""
+    return clean_ticket_open(text)
+
+
+_TICKET_OPEN_START = re.compile(
+    r"(선예매|일반\s*예매|티켓\s*오픈|예매\s*시작|\d{4}[-./]\d{1,2}[-./]\d{1,2})"
+)
+
+
+def clean_ticket_open(text: str) -> str:
+    """모델 답변에서 티켓 오픈 문구만 남긴다.
+
+    마지막 줄을 쓰되, 앞에 섞인 영어 메모 같은 찌꺼기는 첫 '선예매/일반 예매/날짜' 앞까지 잘라낸다.
+    정보가 없다고 했거나 날짜·예매 표현이 전혀 없으면 빈 문자열.
+    """
+    line = text.strip().splitlines()[-1].strip() if text.strip() else ""
     if not line or "정보 없음" in line:
         return ""
-    return line[:200]
+    match = _TICKET_OPEN_START.search(line)
+    if not match:
+        return ""
+    return line[match.start() :][:200]
 
 
 # --- 순수 함수 (테스트 대상) --------------------------------------------------
@@ -475,6 +514,14 @@ def to_item(
         f"티켓 오픈 {perf.get('ticket_open')}" if perf.get("ticket_open") else "",
     ]
     details = " · ".join(p for p in parts if p)
+    if standing:
+        # 예정 목록은 짧게: 출연, 장소, 티켓 오픈만
+        short = [
+            f"출연 {', '.join(matched)}",
+            perf.get("fcltynm", ""),
+            f"티켓 오픈 {perf.get('ticket_open')}" if perf.get("ticket_open") else "",
+        ]
+        details = " · ".join(p for p in short if p)
     return Item(
         title=perf.get("prfnm") or "(제목 없음)",
         url=first_link or PUBLIC_PAGE.format(mt20id=mt20id),
