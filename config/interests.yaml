@@ -19,4 +19,4 @@ interests:
         since_days: 1          # 증분 동기화 때 마지막 동기화일에서 하루를 겹쳐 받음
 
 # 각 소스에서 최대 몇 개 항목을 가져올지
-max_items_per_source: 10
+max_items_per_source: 30

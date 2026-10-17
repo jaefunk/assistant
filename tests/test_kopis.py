@@ -8,6 +8,7 @@ from assistant.models import SourceSpec
 from assistant.sources import get_source
 from assistant.sources.kopis import (
     KopisSource,
+    clean_ticket_open,
     date_chunks,
     in_areas,
     load_store,
@@ -498,3 +499,77 @@ def test_ticket_open_lookup_runs_even_when_kopis_budget_is_spent(tmp_path) -> No
         time_budget=-1,
     ).sync(_spec())
     assert len(claude.prompts) == 3
+
+
+# --- 차단 내성, 티켓 오픈 정리, 예정 목록 축약 ------------------------------------------
+
+
+def test_persistently_blocked_detail_is_skipped_and_sync_continues(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.endswith("/pblprfr"):
+            return httpx.Response(200, text=LIST_XML)
+        if path.endswith("/PF2"):
+            return httpx.Response(400, text="<HTML><H1>Request Blocked</H1></HTML>")
+        return httpx.Response(200, text=DETAILS[path.rsplit("/", 1)[-1]])
+
+    source = _source(httpx.Client(transport=httpx.MockTransport(handler)), store_path=store_path)
+    items = source.fetch(_spec(), limit=10)
+    # PF2 는 건너뛰고 나머지는 확인된다
+    assert [i.title for i in _news(items)] == ["손열음 피아노 리사이틀", "손열음 부산 리사이틀"]
+    store = json.loads(store_path.read_text(encoding="utf-8"))
+    assert "checked" not in store["performances"]["PF2"]
+    assert "checked" in store["performances"]["PF3"]
+    assert store["last_sync"] == "2026-10-16"
+
+
+def test_clean_ticket_open_strips_leaked_prefix() -> None:
+    junk = (
+        "검색 결과\nNeed times. Print the X content."
+        "팬클럽 선예매 2026-09-10 / 일반 예매 2026-09-14 20:00"
+    )
+    assert clean_ticket_open(junk) == "선예매 2026-09-10 / 일반 예매 2026-09-14 20:00"
+    assert (
+        clean_ticket_open("일반 예매 2026-10-02 16:00 (예스24)")
+        == "일반 예매 2026-10-02 16:00 (예스24)"
+    )
+    assert clean_ticket_open("정보 없음") == ""
+    assert clean_ticket_open("Sorry, I could not find it.") == ""
+    assert clean_ticket_open("") == ""
+
+
+def test_standing_item_details_are_compact() -> None:
+    perf = {
+        "prfnm": "공연",
+        "fcltynm": "홀",
+        "prfpdfrom": "2026.11.08",
+        "prfpdto": "2026.11.08",
+        "ticket_open": "일반 예매 2026-10-02 16:00",
+    }
+    detail = {"pcseguidance": "R석 480,000원", "dtguidance": "일요일(17:00)", "relates": []}
+    news = to_item("PF1", perf, detail, ["임윤찬"])
+    standing = to_item("PF1", perf, detail, ["임윤찬"], standing=True)
+    assert "R석 480,000원" in news.details
+    assert standing.details == "출연 임윤찬 · 홀 · 티켓 오픈 일반 예매 2026-10-02 16:00"
+
+
+def test_load_store_cleans_stored_ticket_open(tmp_path) -> None:
+    store_path = tmp_path / "store.json"
+    store_path.write_text(
+        json.dumps(
+            {
+                "last_sync": "2026-10-16",
+                "performances": {
+                    "PF1": {
+                        "prfpdto": "2026.12.04",
+                        "ticket_open": "Need times. 일반 예매 2026-09-14 20:00",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    store = load_store(store_path, TODAY)
+    assert store["performances"]["PF1"]["ticket_open"] == "일반 예매 2026-09-14 20:00"

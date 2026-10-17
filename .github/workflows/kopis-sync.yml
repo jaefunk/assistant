@@ -1,10 +1,11 @@
 name: KOPIS Sync
 
 # 메일 없이 KOPIS 공연 장부(data/kopis_performances.json)만 맞춘다.
-# 매일 02:00 KST (전날 17:00 UTC) 에 긴 시간 예산으로 돌아, 아침 8시 리포트 실행은 증분만 보게 한다.
+# 매일 01:30 KST (전날 16:30 UTC) 에 긴 시간 예산으로 돌아, 아침 리포트 실행은 증분만 보게 한다.
+# GitHub 는 정각 예약을 몰아서 처리해 몇 시간씩 늦어질 수 있어 정각을 피한다.
 on:
   schedule:
-    - cron: "0 17 * * *"
+    - cron: "30 16 * * *"
   workflow_dispatch:
     inputs:
       budget_minutes:
@@ -46,6 +47,7 @@ jobs:
           uv run assistant sync-kopis $FLAGS
 
       - name: Commit ledger
+        if: always()   # 동기화가 중간에 실패해도 그때까지의 장부는 저장한다
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
