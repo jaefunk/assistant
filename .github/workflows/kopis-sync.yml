@@ -39,8 +39,6 @@ jobs:
       - name: Sync KOPIS ledger
         env:
           KOPIS_API_KEY: ${{ secrets.KOPIS_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
         run: |
           FLAGS="--budget-minutes ${{ inputs.budget_minutes || 120 }}"
           if [ "${{ inputs.full_sync }}" = "true" ]; then FLAGS="$FLAGS --full-sync"; fi
