@@ -18,7 +18,8 @@ GitHub Actions 로 정기 실행되는 관심사 정보 리포트 서비스. Pyt
 - `src/assistant/collector.py` : 관심사별 수집 (소스 하나가 실패해도 계속 진행)
 - `src/assistant/report.py` : Markdown 렌더링 및 `reports/` 저장
 - `src/assistant/mailer.py` : SMTP 메일 발송. `SMTP_USER`/`SMTP_PASSWORD`/`MAIL_TO` 환경변수 필요
-- `.github/workflows/report.yml` : 매일 07:30 KST(22:30 UTC) 리포트 생성 → 커밋 → `--email` 발송
+- `src/assistant/notifier.py` : ntfy 휴대폰 푸시. `NTFY_TOPIC` 있고 새 소식이 있을 때만 발송. 실패는 경고만
+- `.github/workflows/report.yml` : 매일 07:30 KST(22:30 UTC) 리포트 생성 → 커밋 → `--email` 발송 → `--push` 알림
 - `.github/workflows/kopis-sync.yml` : 매일 01:30 KST 메일 없이 KOPIS 장부만 동기화
 - `Item.standing` 은 새 소식이 아닌 '현재 상태' 항목(예정 공연 전체). 리포트에 날짜순 D-day 로 표시
 - 외부 LLM(Claude API 등) 은 쓰지 않는다. 수집은 KOPIS·RSS 같은 정형 소스만
