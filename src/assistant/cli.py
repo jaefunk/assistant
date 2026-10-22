@@ -7,6 +7,7 @@ import logging
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+from assistant import notifier
 from assistant import report as report_mod
 from assistant.collector import collect
 from assistant.config import DEFAULT_CONFIG_PATH, load_settings
@@ -24,6 +25,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--stdout", action="store_true", help="파일 대신 표준출력으로")
     run.add_argument(
         "--email", action="store_true", help="SMTP_* / MAIL_TO 환경변수로 리포트를 메일 발송"
+    )
+    run.add_argument(
+        "--push", action="store_true", help="새 소식이 있으면 NTFY_TOPIC 으로 휴대폰 푸시 발송"
     )
 
     sync = sub.add_parser("sync-kopis", help="KOPIS 공연 장부만 동기화한다 (리포트·메일 없음)")
@@ -56,9 +60,28 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 return 1
             send(f"관심사 리포트 {report_date.isoformat()}", markdown, config)
+        if args.push:
+            push(digests, report_date)
     elif args.command == "sync-kopis":
         return sync_kopis(args)
     return 0
+
+
+def push(digests, report_date: date) -> None:
+    """새 소식이 있을 때만 ntfy 푸시. 실패해도 리포트·메일은 이미 나갔으므로 경고만 남긴다."""
+    config = notifier.NtfyConfig.from_env()
+    if config is None:
+        logging.info("NTFY_TOPIC 이 없어 푸시를 건너뜁니다.")
+        return
+    built = notifier.build_push(digests, report_date)
+    if built is None:
+        logging.info("새 소식이 없어 푸시를 보내지 않습니다.")
+        return
+    title, message = built
+    try:
+        notifier.send(title, message, config, click=notifier.report_url(report_date))
+    except Exception as exc:  # 푸시는 보조 수단. 메일은 이미 나갔다
+        logging.warning("ntfy 푸시 실패: %s", exc)
 
 
 def sync_kopis(args: argparse.Namespace) -> int:

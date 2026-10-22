@@ -7,11 +7,12 @@ GitHub Actions 로 정기 실행되는 **관심사 정보 리포트** 서비스�
 ## 동작 흐름
 
 ```
-config/interests.yaml ─▶ collector (sources/*) ─▶ report (Markdown) ─▶ reports/ + mailer (이메일)
+config/interests.yaml ─▶ collector (sources/*) ─▶ report (Markdown) ─▶ reports/ + mailer (이메일) + notifier (휴대폰 푸시)
 ```
 
 신문 배달에 비유하면: `interests.yaml` 이 구독 신청서, `sources/` 가 각 신문사에서 기사를 받아오는 배달원,
-`report` 가 한 부의 신문으로 묶는 인쇄소, `mailer` 가 집 앞까지 배달하는 집배원입니다.
+`report` 가 한 부의 신문으로 묶는 인쇄소, `mailer` 가 집 앞까지 배달하는 집배원, `notifier` 가 새 기사가 있을 때만
+문자를 보내 주는 알림 담당입니다.
 GitHub Actions 의 cron 이 매일 아침 배달 시간을 정합니다.
 
 ## 로컬 실행
@@ -37,7 +38,7 @@ uv run pytest            # 테스트
 | 워크플로 | 트리거 | 역할 |
 | --- | --- | --- |
 | `ci.yml` | push(main), PR | 린트 · 포맷 검사 · 테스트 |
-| `report.yml` | 매일 07:30 KST (22:30 UTC), 수동 실행 | 리포트 생성 → `reports/` 커밋 → 메일 발송 |
+| `report.yml` | 매일 07:30 KST (22:30 UTC), 수동 실행 | 리포트 생성 → `reports/` 커밋 → 메일 발송 → 새 소식이 있으면 휴대폰 푸시 |
 | `kopis-sync.yml` | 매일 01:30 KST (16:30 UTC), 수동 실행 | 메일 없이 KOPIS 공연 장부만 동기화 (`assistant sync-kopis`). 긴 시간 예산으로 미확인 공연을 처리해 아침 실행을 가볍게 함 |
 
 ### 필요한 Secrets / Variables
@@ -50,11 +51,27 @@ uv run pytest            # 테스트
 | Secret | `SMTP_PASSWORD` | Google 계정 → 보안 → 2단계 인증 → **앱 비밀번호** 로 발급한 16자리 |
 | Secret | `MAIL_TO` | 받는 주소. 여러 명이면 쉼표로 구분 |
 | Secret | `KOPIS_API_KEY` | (선택) `kopis` 소스를 쓸 때. 없으면 그 소스만 경고 후 건너뜀 |
+| Secret | `NTFY_TOPIC` | (선택) 휴대폰 푸시용 ntfy 토픽. 없으면 푸시 생략 |
+| Secret | `NTFY_TOKEN` | (선택) ntfy 서버에 접근 토큰이 필요할 때 |
+| Variable | `NTFY_SERVER` | (선택) 기본 `https://ntfy.sh`. 직접 띄운 서버면 그 주소 |
 | Variable | `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM` | (선택) 기본값 `smtp.gmail.com`, `587`, `SMTP_USER` |
 
 Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다. 465 포트는 SSL, 그 외는 STARTTLS 로 접속합니다.
 
 등록 후 Actions 탭 → `Interest Report` → **Run workflow** 로 바로 한 번 보내 보세요.
+
+### 휴대폰 푸시 (ntfy)
+
+새 소식이 있는 날만 휴대폰으로 알림을 받습니다. 예정 공연 목록만 있는 날은 메일만 갑니다.
+
+1. App Store / Play 스토어에서 **ntfy** 앱을 설치합니다.
+2. 앱에서 **Subscribe to topic** 으로 토픽을 하나 만듭니다. 토픽 이름을 아는 사람은 누구나 알림을 볼 수 있으니
+   `yeolleum-k8f2m9x4q7` 처럼 길고 추측하기 어려운 이름을 쓰세요.
+3. 같은 이름을 저장소 Secret `NTFY_TOPIC` 으로 등록합니다.
+
+알림 제목은 `10/22 새 소식 3건`, 본문은 공연 제목과 공연일 목록이고, 누르면 그날 리포트 파일이 열립니다.
+푸시 발송이 실패해도 메일은 이미 나간 뒤라 경고만 남기고 끝냅니다.
+[ntfy.sh](https://ntfy.sh) 공개 서버 대신 직접 띄운 서버를 쓰려면 Variable `NTFY_SERVER` 와 필요 시 Secret `NTFY_TOKEN` 을 등록합니다.
 
 수집에 실패한 소스는 리포트 끝에 한 줄로 표시됩니다.
 
