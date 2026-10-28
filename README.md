@@ -79,11 +79,21 @@ Gmail 이 아닌 SMTP 서버도 `SMTP_HOST`/`SMTP_PORT` 만 바꾸면 됩니다.
 
 | type | 설정 | 동작 |
 | --- | --- | --- |
-| `rss` | `url` | RSS/Atom 피드에서 최신 항목을 가져옵니다 |
+| `rss` | `url`, `keywords`(선택) | RSS/Atom 피드에서 항목을 가져옵니다. `keywords` 가 있으면 제목·요약에 그 중 하나가 들어 있는 글만, `days`(기본 7)보다 오래된 글은 제외. 한 번 실은 글은 `data/rss_seen.json` 에 적어 두고 다시 싣지 않습니다 |
 | `kopis` | `names`, `genres`(기본 클래식·대중음악), `areas`(지역, 비우면 전국), `days`(앞으로 며칠, 기본 7), `since_days`(증분 동기화 겹침 일수, 기본 1) | 공연예술통합전산망의 공연 장부를 증분 동기화해 `names` 의 사람이 출연하는 공연 중 새로 올라오거나 바뀐 것을 가져옵니다. `KOPIS_API_KEY` 필요 |
 
 ```yaml
 interests:
+  - name: 소니 RX100M8
+    sources:
+      - type: rss   # 구글 뉴스 검색 피드
+        url: https://news.google.com/rss/search?q=RX100M8&hl=ko&gl=KR&ceid=KR:ko
+      - type: rss   # 전체 피드는 키워드로 거름
+        url: https://www.sonyalpharumors.com/feed/
+        keywords: [RX100]
+```
+
+```yaml
   - name: 공연 소식
     sources:
       - type: kopis

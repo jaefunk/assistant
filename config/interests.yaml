@@ -2,7 +2,9 @@
 # 각 항목은 name(제목), sources(수집 소스 목록)로 구성됩니다.
 #
 # source.type:
-#   rss           : url 의 RSS/Atom 피드에서 가져옵니다.
+#   rss           : url 의 RSS/Atom 피드에서 가져옵니다. keywords 가 있으면 제목·요약에 그 중 하나가
+#                   들어 있는 글만. days 일(기본 7)보다 오래된 글은 뺍니다.
+#                   한 번 실은 글은 data/rss_seen.json 에 적어 두고 다시 싣지 않습니다.
 #   kopis         : 공연예술통합전산망(KOPIS) 공연 장부(data/)를 증분 동기화해 names 의 사람이
 #                   출연하는 공연 중 새로 올라오거나 바뀐 것을 가져옵니다. KOPIS_API_KEY 필요.
 interests:
@@ -14,6 +16,21 @@ interests:
         areas: [서울, 인천, 경기] # 수도권 공연만
         days: 180              # 앞으로 6개월치 공연 중
         since_days: 1          # 증분 동기화 때 마지막 동기화일에서 하루를 겹쳐 받음
+
+  - name: 소니 RX100M8
+    sources:
+      # 구글 뉴스 검색 피드 (한국어 / 영어). 검색어로 걸러져 오므로 keywords 는 안 둠
+      - type: rss
+        url: https://news.google.com/rss/search?q=RX100M8+OR+%22RX100+VIII%22+OR+%22RX100+M8%22&hl=ko&gl=KR&ceid=KR:ko
+      - type: rss
+        url: https://news.google.com/rss/search?q=%22RX100+VIII%22+OR+RX100M8+OR+%22RX100+M8%22&hl=en-US&gl=US&ceid=US:en
+      # 소니 루머 사이트. 전체 피드라 RX100 글만 거름
+      - type: rss
+        url: https://www.sonyalpharumors.com/feed/
+        keywords: [RX100]
+      - type: rss
+        url: https://www.dpreview.com/feeds/news.xml
+        keywords: [RX100]
 
 # 각 소스에서 최대 몇 개 항목을 가져올지
 max_items_per_source: 30

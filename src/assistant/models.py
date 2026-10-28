@@ -10,7 +10,7 @@ from datetime import date, datetime
 class SourceSpec:
     """config/interests.yaml 의 source 한 항목.
 
-    rss 는 url 을, kopis 는 names 를 쓴다.
+    rss 는 url(과 선택 keywords)을, kopis 는 names 를 쓴다.
     """
 
     type: str
@@ -20,6 +20,7 @@ class SourceSpec:
     genres: tuple[str, ...] = ()
     areas: tuple[str, ...] = ()
     since_days: int = 1
+    keywords: tuple[str, ...] = ()  # rss: 제목·요약에 이 중 하나가 있어야 수집
 
 
 @dataclass(frozen=True)
