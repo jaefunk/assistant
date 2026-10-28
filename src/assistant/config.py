@@ -39,6 +39,7 @@ def _parse_source(raw: dict, interest_name: str) -> SourceSpec:
         genres=_str_tuple(raw.get("genres")),
         areas=_str_tuple(raw.get("areas")),
         since_days=int(raw.get("since_days", 1)),
+        keywords=_str_tuple(raw.get("keywords")),
     )
     if not spec.type:
         raise ValueError(f"{interest_name}: source 에 'type' 이 필요합니다.")

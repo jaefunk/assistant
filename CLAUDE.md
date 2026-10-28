@@ -14,7 +14,7 @@ GitHub Actions 로 정기 실행되는 관심사 정보 리포트 서비스. Pyt
 
 - `config/interests.yaml` : 관심사와 소스 정의
 - `src/assistant/config.py` : 설정 로딩
-- `src/assistant/sources/` : 수집기. `REGISTRY` 에 type 이름으로 등록. `rss`(url), `kopis`(names, 공연전산망. `KOPIS_API_KEY` 필요. `data/kopis_performances.json` 장부를 증분 동기화)
+- `src/assistant/sources/` : 수집기. `REGISTRY` 에 type 이름으로 등록. `rss`(url, 선택 keywords. 실은 글은 `data/rss_seen.json` 에 기록해 중복 제외), `kopis`(names, 공연전산망. `KOPIS_API_KEY` 필요. `data/kopis_performances.json` 장부를 증분 동기화)
 - `src/assistant/collector.py` : 관심사별 수집 (소스 하나가 실패해도 계속 진행)
 - `src/assistant/report.py` : Markdown 렌더링 및 `reports/` 저장
 - `src/assistant/mailer.py` : SMTP 메일 발송. `SMTP_USER`/`SMTP_PASSWORD`/`MAIL_TO` 환경변수 필요

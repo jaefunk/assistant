@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, date, datetime
+from urllib.parse import urlparse
 
 from assistant.models import InterestDigest, Item, Settings
 from assistant.sources import get_source
@@ -19,7 +20,7 @@ def collect(settings: Settings) -> list[InterestDigest]:
             try:
                 items = get_source(spec.type).fetch(spec, settings.max_items_per_source)
             except Exception as exc:  # 소스 하나가 죽어도 리포트 전체는 나가야 한다
-                label = spec.url or ", ".join(spec.names)
+                label = _host(spec.url) or ", ".join(spec.names)
                 log.warning("수집 실패: %s %s (%s): %s", spec.type, label, interest.name, exc)
                 digest.failures.append(f"{interest.name} · {spec.type} {label}: {str(exc)[:120]}")
                 continue
@@ -34,6 +35,11 @@ def collect(settings: Settings) -> list[InterestDigest]:
 
 
 _OLDEST = datetime.min.replace(tzinfo=UTC)
+
+
+def _host(url: str) -> str:
+    """실패 표시용. 긴 피드 주소 대신 호스트만."""
+    return urlparse(url).netloc or url
 
 
 def _sort_key(item: Item) -> datetime:
