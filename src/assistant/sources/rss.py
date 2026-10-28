@@ -16,6 +16,7 @@ import re
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from time import mktime
+from urllib.parse import urlparse
 
 import feedparser
 import httpx
@@ -49,11 +50,19 @@ class RssSource:
         today = self._today or datetime.now(tz=UTC).date()
         seen = load_seen(self._seen_path, today)
         oldest = today - timedelta(days=spec.days)
-        items = [
-            i
-            for i in parse_feed(response.text, spec.keywords)
-            if i.url not in seen and (i.published is None or i.published.date() >= oldest)
-        ][:limit]
+        total = len(feedparser.parse(response.text).entries)
+        matched = parse_feed(response.text, spec.keywords)
+        recent = [i for i in matched if i.published is None or i.published.date() >= oldest]
+        items = [i for i in recent if i.url not in seen][:limit]
+        log.info(
+            "rss: %s 항목 %d개 → 키워드 %d → 최근 %d일 %d → 새 글 %d",
+            urlparse(spec.url).netloc,
+            total,
+            len(matched),
+            spec.days,
+            len(recent),
+            len(items),
+        )
         for item in items:
             seen[item.url] = today.isoformat()
         save_seen(self._seen_path, seen)
