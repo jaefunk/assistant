@@ -29,7 +29,7 @@ interests:
         url: https://www.sonyalpharumors.com/feed/
         keywords: [RX100]
       - type: rss
-        url: https://www.dpreview.com/feeds/news.xml
+        url: https://www.dpreview.com/feed/
         keywords: [RX100]
 
 # 각 소스에서 최대 몇 개 항목을 가져올지
