@@ -1,5 +1,5 @@
 {
- "last_sync": "2026-11-02",
+ "last_sync": "2026-11-03",
  "performances": {
   "PF247431": {
    "area": "서울특별시",
@@ -5896,21 +5896,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF302538": {
-   "area": "서울특별시",
-   "cast": "임청화, 유소영, 김민지, 김미현, 김충희, 하만택, 박경준 등 / 정영택",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "세종문화회관",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제3회 (사) 한국예술가곡총연합회 정기연주회: 한국예술가곡의 향연",
-   "prfpdfrom": "2026.11.02",
-   "prfpdto": "2026.11.02",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF302539": {
    "area": "서울특별시",
    "cast": "최정윤 / ",
@@ -6298,21 +6283,6 @@
    "prfnm": "박진영 콘서트: WET",
    "prfpdfrom": "2026.12.24",
    "prfpdto": "2026.12.26",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF302733": {
-   "area": "서울특별시",
-   "cast": "장윤성, 성이현, 김미순 등 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "롯데콘서트홀",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "서울대학교 개교 80주년 기념 SNU Symphony Orchestra 정기연주회",
-   "prfpdfrom": "2026.11.02",
-   "prfpdto": "2026.11.02",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -10137,21 +10107,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-20"
   },
-  "PF303847": {
-   "area": "서울특별시",
-   "cast": " / ",
-   "checked": "2026-10-20",
-   "detail": null,
-   "fcltynm": "구름아래소극장",
-   "first_seen": "2026-10-20",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "라라라온 [서울 구름아래소극장]",
-   "prfpdfrom": "2026.11.02",
-   "prfpdto": "2026.11.02",
-   "prfstate": "공연예정",
-   "updated": "2026-10-20"
-  },
   "PF303853": {
    "area": "서울특별시",
    "cast": " / ",
@@ -10704,21 +10659,6 @@
    "prfnm": "우리동네 문화나들이, Korea Virtuoso: 비발디 & 귀도의 사계 [남양주]",
    "prfpdfrom": "2026.11.29",
    "prfpdto": "2026.11.29",
-   "prfstate": "공연예정",
-   "updated": "2026-10-21"
-  },
-  "PF304028": {
-   "area": "서울특별시",
-   "cast": "이미연 / ",
-   "checked": "2026-10-21",
-   "detail": null,
-   "fcltynm": "금호아트홀 연세",
-   "first_seen": "2026-10-21",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "이미연 피아노 독주회",
-   "prfpdfrom": "2026.11.02",
-   "prfpdto": "2026.11.02",
    "prfstate": "공연예정",
    "updated": "2026-10-21"
   },
@@ -11780,21 +11720,6 @@
    "prfnm": "크리스마스 콘서트 [인천]",
    "prfpdfrom": "2026.12.25",
    "prfpdto": "2026.12.25",
-   "prfstate": "공연예정",
-   "updated": "2026-10-23"
-  },
-  "PF304283": {
-   "area": "서울특별시",
-   "cast": "오윤지, 신민철 / ",
-   "checked": "2026-10-23",
-   "detail": null,
-   "fcltynm": "세라믹팔레스홀",
-   "first_seen": "2026-10-23",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "소프라노 오윤지 초청 독창회",
-   "prfpdfrom": "2026.11.02",
-   "prfpdto": "2026.11.02",
    "prfstate": "공연예정",
    "updated": "2026-10-23"
   },
