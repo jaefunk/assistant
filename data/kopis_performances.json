@@ -1,5 +1,5 @@
 {
- "last_sync": "2026-11-03",
+ "last_sync": "2026-11-04",
  "performances": {
   "PF247431": {
    "area": "서울특별시",
@@ -1889,68 +1889,6 @@
    "prfpdfrom": "2026.11.15",
    "prfpdto": "2026.11.15",
    "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF298692": {
-   "area": "서울특별시",
-   "cast": "홍석원, 백건우, 문태국, 홍혜란, 최원휘, 손지훈, 박지훈 / ",
-   "checked": "2026-10-16",
-   "detail": {
-    "area": "서울특별시",
-    "child": "N",
-    "daehakro": "N",
-    "dtguidance": "화요일(19:30)",
-    "entrpsnm": "(재)성정문화재단",
-    "entrpsnmA": "(재)성정문화재단",
-    "entrpsnmH": "(재)성정문화재단",
-    "entrpsnmP": "",
-    "entrpsnmS": "",
-    "fcltynm": "예술의전당 [서울] (콘서트홀)",
-    "festival": "N",
-    "frstregdt": "2026-08-18 13:46:47",
-    "genrenm": "서양음악(클래식)",
-    "mt10id": "FC000001",
-    "mt13id": "FC000001-03",
-    "mt20id": "PF298692",
-    "musicalcreate": "N",
-    "musicallicense": "N",
-    "openrun": "N",
-    "pcseguidance": "R석 150,000원, S석 100,000원, A석 70,000원, B석 50,000원",
-    "poster": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF298692_260818_134647.gif",
-    "prfage": "만 7세 이상",
-    "prfcast": "홍석원, 백건우, 문태국, 홍혜란, 최원휘, 손지훈, 박지훈",
-    "prfcrew": "",
-    "prfnm": "성정문화재단 창립 45주년 기념 음악회",
-    "prfpdfrom": "2026.11.03",
-    "prfpdto": "2026.11.03",
-    "prfruntime": "1시간 40분",
-    "prfstate": "공연예정",
-    "relates": [
-     {
-      "name": "놀유니버스",
-      "url": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26012023"
-     },
-     {
-      "name": "예스24",
-      "url": "https://ticket.yes24.com/Perf/59750"
-     }
-    ],
-    "sty": "[프로그램]\n\n - 1 부 -\nBizet: Carman Overture (카르멘 서곡) \n\nVc 문태국\nP.I. Tchaikovsky, Variations on a Rococo Theme, Op. 33\n\n피아노 백건우\nW.A. Mozart : Piano Concerto No.25 In C Major K.503 /\n제1악장 알레그로 마에스토소 (Allegro Maestoso)\n제2악장 안단테 (Andante)\n제3악장 알레그레토 (Allegretto)\n\n- 2부-\n세계 속에 대한민국을 빛낸 예술인과 문화 예술 발전에 현저하게\n공헌한 예술인들에 대한 공적을 기리고자 제정된 성정예술인상 시상\n1. 제9회 수상자(미정) 상패 및 상금증서 전달\n2. 창립40주년 준비위원장(이희범) 감사패 수여\n\n홍혜란, Soprano & 손지훈 Tenor\nUn dì felice, eterea\nfrom La Traviata — G. Verdi\n《라 트라비아타》 제1막의 이중창 「Un dì, felice, eterea」\n\n홍혜란, Soprano\nÈ strano!… Sempre libera from La Traviata — G. Verdi\n\n손지훈, Tenor\nLunge da lei… De’ miei bollenti spiriti\n…. O mio rimorso from La Traviata — G. Verdi\n베르디 오페라 《라 트라비아타》 중\n“Lunge da lei… De’ miei bollenti spiriti… O mio rimorso”\n\n박지훈, Tenor\nE lucevan le stelle from Tosca — G. Puccini\n\n최원휘, Tenor\nRecitar!… Vesti la giubba from Pagliacci — R. Leoncavallo\n\nThree Tenors\nLa donna è mobile from Rigoletto — G. Verdi\nNessun dorma from Turandot — G. Puccini\n\n홍혜란, Soprano\nOver the Rainbow from The Wizard of Oz — H. Arlen\n\n다같이\nTonight\nfrom West Side Story — L. Bernstein\n내 맘의 강물 — 이수인",
-    "updatedate": "2026-09-10 10:46:33",
-    "visit": "N"
-   },
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [
-    "백건우"
-   ],
-   "pending_report": false,
-   "prfnm": "성정문화재단 창립 45주년 기념 음악회",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "reported": "2026-10-17",
    "updated": "2026-10-16"
   },
   "PF298787": {
@@ -4829,21 +4767,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF302035": {
-   "area": "서울특별시",
-   "cast": "강명주, 김경원, 김수진, 오진현, 정연경, 이지현 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "금호아트홀 연세",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "시문학과 예술가곡 리더아벤트 시리즈 11, 모차르트 예술가곡과 콘체르토 아리아의 밤",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF302038": {
    "area": "서울특별시",
    "cast": "제레드 레드몬드 / ",
@@ -5264,36 +5187,6 @@
    "prfpdto": "2026.11.09",
    "prfstate": "공연예정",
    "reported": "2026-10-17",
-   "updated": "2026-10-16"
-  },
-  "PF302207": {
-   "area": "서울특별시",
-   "cast": "손인경, 정유진, 이상효, 이지영, 노예리, 박성희, 허철 등 / 박은희",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제82회 (사) 한국페스티발앙상블 정기연주회",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF302221": {
-   "area": "서울특별시",
-   "cast": "신주용, 김우경, 고세웅, 김규호, 홍표진, 이현호, 김민석 등 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "롯데콘서트홀",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "한양 윈드오케스트라 정기연주회",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
   "PF302249": {
@@ -6465,21 +6358,6 @@
    "prfpdto": "2026.12.19",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
-  },
-  "PF302804": {
-   "area": "서울특별시",
-   "cast": "신민정 / ",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "세종문화회관",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "신민정 리사이틀: 세상의 모든, 피아노 음악 #2. 신낭만을 꿈꾸다",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연완료",
-   "updated": "2026-11-03"
   },
   "PF302829": {
    "area": "서울특별시",
@@ -9087,21 +8965,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF303569": {
-   "area": "경기도",
-   "cast": "박성일, 이정진, 박미자, 임근철, 최인규, 이무은, 임진영 등 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "부천아트센터",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제7회 CTS 장로합창단 정기연주회 [부천]",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF303571": {
    "area": "서울특별시",
    "cast": "박정현 / ",
@@ -9672,21 +9535,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-19"
   },
-  "PF303728": {
-   "area": "서울특별시",
-   "cast": "홍수정, 김지훈, 조재형 / ",
-   "checked": "2026-10-19",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-19",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "홍수정 바이올린 독주회",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "updated": "2026-10-19"
-  },
   "PF303730": {
    "area": "서울특별시",
    "cast": "송영민 / ",
@@ -10212,21 +10060,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-20"
   },
-  "PF303875": {
-   "area": "서울특별시",
-   "cast": "조성빈 / ",
-   "checked": "2026-10-20",
-   "detail": null,
-   "fcltynm": "뮤직앤아트스튜디오",
-   "first_seen": "2026-10-20",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "MU&A 스튜디오 기획 시리즈, 조성빈 기타 리사이틀: Opening the Doors - 여섯 개의 이야기",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "updated": "2026-10-20"
-  },
   "PF303876": {
    "area": "서울특별시",
    "cast": "심규연, 장주훈, 전신영, 최영원, 장동인 / 심규연, 김애림, 김민정 등",
@@ -10269,21 +10102,6 @@
    "prfnm": "라라라온 [스튜디오 엔텐바흐]",
    "prfpdfrom": "2026.11.04",
    "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-20"
-  },
-  "PF303886": {
-   "area": "서울특별시",
-   "cast": "조은세, 박희찬, 손진욱, 박성경, 정광현, 정지원, 전혜림 / ",
-   "checked": "2026-10-20",
-   "detail": null,
-   "fcltynm": "홍대우주정거장",
-   "first_seen": "2026-10-20",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "라라라온 [우주정거장]",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
    "prfstate": "공연예정",
    "updated": "2026-10-20"
   },
@@ -10346,21 +10164,6 @@
    "prfpdto": "2026.11.15",
    "prfstate": "공연예정",
    "updated": "2026-10-21"
-  },
-  "PF303918": {
-   "area": "서울특별시",
-   "cast": "손소이, 안효정, 김민욱, 윤혜성, 강민정, 송화현, 이상민 등 / ",
-   "checked": "2026-10-20",
-   "detail": null,
-   "fcltynm": "일신홀",
-   "first_seen": "2026-10-20",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "이은지 작곡 발표회, 조각 붙이기: Wolfgang Rihm을 기억하며",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
-   "prfstate": "공연예정",
-   "updated": "2026-10-20"
   },
   "PF303920": {
    "area": "서울특별시",
@@ -12125,21 +11928,6 @@
    "prfnm": "제1304회 서초금요음악회, 사랑을 노래하다: 오페라 라보엠",
    "prfpdfrom": "2026.11.06",
    "prfpdto": "2026.11.06",
-   "prfstate": "공연예정",
-   "updated": "2026-10-26"
-  },
-  "PF304390": {
-   "area": "서울특별시",
-   "cast": "김보경, 김혜민, 박경희, 유지은, 윤이나, 이주리, 조윤미 등 / ",
-   "checked": "2026-10-26",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-26",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제101회 영미성악연구회 정기연주회",
-   "prfpdfrom": "2026.11.03",
-   "prfpdto": "2026.11.03",
    "prfstate": "공연예정",
    "updated": "2026-10-26"
   },
