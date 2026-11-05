@@ -1,5 +1,5 @@
 {
- "last_sync": "2026-11-04",
+ "last_sync": "2026-11-05",
  "performances": {
   "PF247431": {
    "area": "서울특별시",
@@ -568,21 +568,6 @@
    "prfnm": "성남아트센터 오후의 콘서트: Viva Italia! 오페라 갈라 콘서트 (12월)",
    "prfpdfrom": "2026.12.02",
    "prfpdto": "2026.12.02",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF285221": {
-   "area": "경기도",
-   "cast": "알베르토 몬디, 김효진, 조운, 유택언, 이동민, 김경태 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "성남아트센터",
-   "first_seen": "2026-10-16",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "성남아트센터 오후의 콘서트: 수요재즈클럽 (11월)",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -4227,21 +4212,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF301512": {
-   "area": "서울특별시",
-   "cast": "정상희, 정승연, 조혜정 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "세종문화회관",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제10회 클로리스 피아노 트리오 정기연주회",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF301541": {
    "area": "서울특별시",
    "cast": "강지혜 / ",
@@ -4974,21 +4944,6 @@
    "prfnm": "제15회 LG필하모닉 오케스트라 정기연주회",
    "prfpdfrom": "2026.11.08",
    "prfpdto": "2026.11.08",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF302117": {
-   "area": "서울특별시",
-   "cast": "강성찬, 강신모, 권오혁, 김성진, 김재일, 김태형, 김충식 등 / 양재무",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제21회 이마에스트리 정기연주회",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -5939,21 +5894,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF302611": {
-   "area": "서울특별시",
-   "cast": "정원순, 이영현, 최예선, 이숙정, 장하얀, 배종선, 권혜진 등 / 배종선, 강은하, 권명혜 등",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제26회 현대음악앙상블 소리 정기연주회: Dream & Life",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연완료",
-   "updated": "2026-11-04"
-  },
   "PF302617": {
    "area": "서울특별시",
    "cast": "양고운, 박소영, 이수민, 임경원, 손정범 / ",
@@ -6326,21 +6266,6 @@
    "prfnm": "권인하 N'SONZ 콘서트: 추구미가 권인하",
    "prfpdfrom": "2026.12.27",
    "prfpdto": "2026.12.27",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF302788": {
-   "area": "서울특별시",
-   "cast": "정치용, 임주희, 김다미 등 / ",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "롯데콘서트홀",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "희망 Dream NEXT Concert: STAGE",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -7257,21 +7182,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF303135": {
-   "area": "서울특별시",
-   "cast": " / ",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "무신사 개러지 (구. 왓챠홀)",
-   "first_seen": "2026-10-16",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "29CM STAGE, 신인류 X 29CM Editorial",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF303163": {
    "area": "경기도",
    "cast": "이종원, 김류엽, 성유진, 남유빈, 고관형, 이하진, 정기훈 등 / 김영은, 이현정, 이효석 등",
@@ -7869,21 +7779,6 @@
    "prfnm": "소현정 피아노 독주회",
    "prfpdfrom": "2026.11.11",
    "prfpdto": "2026.11.11",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF303306": {
-   "area": "서울특별시",
-   "cast": "류승완, 김하얀 / ",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "푸르지오아트홀",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "푸르지오 아트홀 수요 초대석 47. 바리톤 류승완 독창회: Tutto il Bel Canto!",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -9490,21 +9385,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-19"
   },
-  "PF303717": {
-   "area": "서울특별시",
-   "cast": "양지우, 최지선 / ",
-   "checked": "2026-10-19",
-   "detail": null,
-   "fcltynm": "반포심산아트홀",
-   "first_seen": "2026-10-19",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "서리풀 어울림 콘서트, 피아니스트 양지우의 네 개의 질문이 있는 드라마터크 콘서트: with IN & OUT Ⅱ",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-19"
-  },
   "PF303720": {
    "area": "서울특별시",
    "cast": " / ",
@@ -9835,21 +9715,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-19"
   },
-  "PF303804": {
-   "area": "서울특별시",
-   "cast": "양민경, 정태진, 맹은경 / ",
-   "checked": "2026-10-19",
-   "detail": null,
-   "fcltynm": "세라믹팔레스홀",
-   "first_seen": "2026-10-19",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "소프라노 양민경 초청 독창회",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-19"
-  },
   "PF303810": {
    "area": "서울특별시",
    "cast": "최민호 / ",
@@ -10120,21 +9985,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-20"
   },
-  "PF303884": {
-   "area": "서울특별시",
-   "cast": "한상훈, 김은비, 이봉규, 박성준, 정다운, 이제형, 김예일 등 / ",
-   "checked": "2026-10-20",
-   "detail": null,
-   "fcltynm": "스튜디오 엔텐바흐(Studio ENTENBACH)",
-   "first_seen": "2026-10-20",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "라라라온 [스튜디오 엔텐바흐]",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-20"
-  },
   "PF303897": {
    "area": "경기도",
    "cast": "김성진, 김희재 등 / ",
@@ -10147,21 +9997,6 @@
    "prfnm": "국립심포니콘서트오케스트라, 드보르자크, 교향곡 9번 신세계로부터 [포천]",
    "prfpdfrom": "2026.11.15",
    "prfpdto": "2026.11.15",
-   "prfstate": "공연예정",
-   "updated": "2026-10-20"
-  },
-  "PF303906": {
-   "area": "서울특별시",
-   "cast": "조선희, 윤영준, 송태호, 전윤미, 최주영, 김경희, 김광미 등 / ",
-   "checked": "2026-10-20",
-   "detail": null,
-   "fcltynm": "꿈의숲아트센터",
-   "first_seen": "2026-10-20",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제33회 서울리코더합주단 정기연주회",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-20"
   },
@@ -10357,21 +10192,6 @@
    "prfnm": "한올 어쿠스틱 콘서트: 겨울 인사",
    "prfpdfrom": "2026.11.29",
    "prfpdto": "2026.11.29",
-   "prfstate": "공연예정",
-   "updated": "2026-10-21"
-  },
-  "PF303958": {
-   "area": "서울특별시",
-   "cast": " / ",
-   "checked": "2026-10-21",
-   "detail": null,
-   "fcltynm": "아스트라홀",
-   "first_seen": "2026-10-21",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "The BOUND, Elsewhere",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-21"
   },
@@ -10850,21 +10670,6 @@
    "prfnm": "엘림아트센터 개관 10주년 기념 콘서트 [인천]",
    "prfpdfrom": "2026.11.29",
    "prfpdto": "2026.11.29",
-   "prfstate": "공연예정",
-   "updated": "2026-10-22"
-  },
-  "PF304107": {
-   "area": "서울특별시",
-   "cast": "강혜정, 강형규, 홍예빈, 최영민, 민경찬, 원유선 / ",
-   "checked": "2026-10-22",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-22",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "대한민국 작곡제전, 김순남 가곡 연주회 [서울]",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-22"
   },
@@ -12516,21 +12321,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-26"
   },
-  "PF304513": {
-   "area": "경기도",
-   "cast": "이형민, 김지은, 원아영, 유현성, 장지원, 조은정 / ",
-   "checked": "2026-10-26",
-   "detail": null,
-   "fcltynm": "구리아트홀",
-   "first_seen": "2026-10-26",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "형형한 클래식, AUS WIEN: 네 개의 손, 하나의 비엔나 [구리]",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연예정",
-   "updated": "2026-10-26"
-  },
   "PF304525": {
    "area": "경기도",
    "cast": "황윤석, 주민규 / ",
@@ -14073,21 +13863,6 @@
    "prfnm": "빛과소금합창단 창단 20주년 기념음악회 [인천]",
    "prfpdfrom": "2026.11.22",
    "prfpdto": "2026.11.22",
-   "prfstate": "공연예정",
-   "updated": "2026-10-29"
-  },
-  "PF304834": {
-   "area": "서울특별시",
-   "cast": "권주용, 허태린, 정용린, 강이솔, 박지우, 정예린, 이지현 등 / ",
-   "checked": "2026-10-29",
-   "detail": null,
-   "fcltynm": "롯데콘서트홀",
-   "first_seen": "2026-10-29",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "(사) 서울오케스트라와 함께하는 소아암 환우 돕기 KSC 신인 아티스트 콘서트",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
    "prfstate": "공연예정",
    "updated": "2026-10-29"
   },
@@ -16356,21 +16131,6 @@
    "prfstate": "공연예정",
    "updated": "2026-11-03"
   },
-  "PF305316": {
-   "area": "서울특별시",
-   "cast": " / ",
-   "checked": "2026-11-03",
-   "detail": null,
-   "fcltynm": "긱라이브하우스 [마포]",
-   "first_seen": "2026-11-03",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "Choco Signal",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연완료",
-   "updated": "2026-11-04"
-  },
   "PF305318": {
    "area": "서울특별시",
    "cast": " / ",
@@ -16475,21 +16235,6 @@
    "prfpdto": "2026.11.12",
    "prfstate": "공연예정",
    "updated": "2026-11-03"
-  },
-  "PF305348": {
-   "area": "서울특별시",
-   "cast": " / ",
-   "checked": "2026-11-03",
-   "detail": null,
-   "fcltynm": "아지토 라이브 홀",
-   "first_seen": "2026-11-03",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "AZITO PLAY, 동물",
-   "prfpdfrom": "2026.11.04",
-   "prfpdto": "2026.11.04",
-   "prfstate": "공연완료",
-   "updated": "2026-11-04"
   },
   "PF305349": {
    "area": "서울특별시",
