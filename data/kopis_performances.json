@@ -1,5 +1,5 @@
 {
- "last_sync": "2026-11-10",
+ "last_sync": "2026-11-11",
  "performances": {
   "PF247431": {
    "area": "서울특별시",
@@ -1758,21 +1758,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF298862": {
-   "area": "서울특별시",
-   "cast": "김동혁, 임동혁 등 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "디 오리지널 시리즈, 임동혁 X 오케스트라 디 오리지널, 리부트: 라흐마니노프",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF298903": {
    "area": "서울특별시",
    "cast": "카와사키 타카야 / ",
@@ -1950,21 +1935,6 @@
    "prfnm": "Classic Mode, 대니 구 Violin",
    "prfpdfrom": "2026.11.28",
    "prfpdto": "2026.11.28",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF299347": {
-   "area": "경기도",
-   "cast": "윤태현, 박종화 등 / 박귀섭, 윤태현 등",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "화성예술의전당",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "SAC ON SCREEN, 보컬 마스터 시리즈 Ⅲ. 베이스 바리톤 사무엘 윤 [화성] (영상화)",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -3283,21 +3253,6 @@
    "prfnm": "전상근 10th Anniversary Concert: EPILOGUE: 그리고, 우리는 전상근",
    "prfpdfrom": "2026.11.28",
    "prfpdto": "2026.11.29",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF301176": {
-   "area": "서울특별시",
-   "cast": "나윤아, 장혜리, 정소윤 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "세종문화회관",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제7회 블루밍 트리오 정기연주회",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -4649,21 +4604,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF302457": {
-   "area": "서울특별시",
-   "cast": "여자경, 김규연, 최은규 등 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "세종문화회관",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "누구나 클래식 with 대전시립교향악단 (11월)",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF302471": {
    "area": "서울특별시",
    "cast": "김광진 / ",
@@ -5006,21 +4946,6 @@
    "prfnm": "Venna live in Seoul",
    "prfpdfrom": "2026.11.17",
    "prfpdto": "2026.11.17",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF302691": {
-   "area": "서울특별시",
-   "cast": "김준동, 박효민 / ",
-   "checked": "2026-10-16",
-   "detail": null,
-   "fcltynm": "강동아트센터",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "리트플레이 겨울나그네 렉처 콘서트 (베스티클럽)",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -6192,21 +6117,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF303248": {
-   "area": "서울특별시",
-   "cast": "강초롱, 윤예진 / ",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "강초롱 플루트 독주회",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
   "PF303254": {
    "area": "서울특별시",
    "cast": "안광현 / ",
@@ -6582,21 +6492,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
-  "PF303362": {
-   "area": "서울특별시",
-   "cast": "이지영, 오선영, 송정민, 신현석, 백승훈 / ",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제37회 여음목관5중주 정기연주회",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연완료",
-   "updated": "2026-11-10"
-  },
   "PF303369": {
    "area": "서울특별시",
    "cast": "유송윤, 문재원 / ",
@@ -6624,21 +6519,6 @@
    "prfnm": "나의 아저씨가 들려주는 크리스마스의 선율 [인천]",
    "prfpdfrom": "2026.12.24",
    "prfpdto": "2026.12.25",
-   "prfstate": "공연예정",
-   "updated": "2026-10-16"
-  },
-  "PF303378": {
-   "area": "서울특별시",
-   "cast": "정주원, 안나 네시바, 요하네스 가우비츠, 크리스토퍼 렌츠, 마티아스 루체, 플로라 파브리, 정민호 등 / 알렉산더 슈나이더",
-   "checked": "2026-10-17",
-   "detail": null,
-   "fcltynm": "예술의전당 [서울]",
-   "first_seen": "2026-10-16",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "서울바흐축제, 칸타타 시리즈",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-10-16"
   },
@@ -10343,21 +10223,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-27"
   },
-  "PF304586": {
-   "area": "인천광역시",
-   "cast": "송경하, 이상현, 이진복, 한주희 / 송경하, 김진우 등",
-   "checked": "2026-10-27",
-   "detail": null,
-   "fcltynm": "아트센터 인천",
-   "first_seen": "2026-10-27",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "음악감독 송경하와 함께하는 이탈리아 바닷가 도시 음악 여행",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연예정",
-   "updated": "2026-10-27"
-  },
   "PF304587": {
    "area": "서울특별시",
    "cast": " / ",
@@ -10430,21 +10295,6 @@
    "prfnm": "라라라온 [서울 클럽샤프]",
    "prfpdfrom": "2026.11.11",
    "prfpdto": "2026.11.11",
-   "prfstate": "공연예정",
-   "updated": "2026-10-27"
-  },
-  "PF304601": {
-   "area": "서울특별시",
-   "cast": "정혜빈, 조지훈, 이현영, 김영준, 정명성, 노윤영, 이봉연 / ",
-   "checked": "2026-10-27",
-   "detail": null,
-   "fcltynm": "스페이스한강",
-   "first_seen": "2026-10-27",
-   "genrenm": "대중음악",
-   "matched": [],
-   "prfnm": "라라라온 [스페이스 한강]",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-10-27"
   },
@@ -11843,21 +11693,6 @@
    "prfstate": "공연예정",
    "updated": "2026-10-30"
   },
-  "PF304887": {
-   "area": "서울특별시",
-   "cast": "김미아, 임소현, 백승민, 최혜영, 허정림, 황현석, 박서연 등 / ",
-   "checked": "2026-10-30",
-   "detail": null,
-   "fcltynm": "영산아트홀",
-   "first_seen": "2026-10-30",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제21회 예인교수앙상블 정기연주회",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연예정",
-   "updated": "2026-10-30"
-  },
   "PF304892": {
    "area": "서울특별시",
    "cast": "박시은 / ",
@@ -12890,21 +12725,6 @@
    "prfnm": "김종국 콘서트: EDITION 국룰 [성남]",
    "prfpdfrom": "2026.11.28",
    "prfpdto": "2026.11.28",
-   "prfstate": "공연예정",
-   "updated": "2026-11-02"
-  },
-  "PF305138": {
-   "area": "서울특별시",
-   "cast": "김정림, 구민희 / ",
-   "checked": "2026-11-02",
-   "detail": null,
-   "fcltynm": "금호아트홀 연세",
-   "first_seen": "2026-11-02",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제7회 김정림 구민희 피아노 듀오 콘서트",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-11-02"
   },
@@ -14213,21 +14033,6 @@
    "prfstate": "공연예정",
    "updated": "2026-11-04"
   },
-  "PF305489": {
-   "area": "서울특별시",
-   "cast": "구희용, 안은영, 조정현, 나예리, 유경진, 조은경 등 / ",
-   "checked": "2026-11-04",
-   "detail": null,
-   "fcltynm": "충무아트센터",
-   "first_seen": "2026-11-04",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제27회 중구구립합창단 정기 연주회",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연예정",
-   "updated": "2026-11-04"
-  },
   "PF305490": {
    "area": "서울특별시",
    "cast": "오태환, 박현민, 카토 세나, 진재인, 오카야마 루키아 / ",
@@ -14420,21 +14225,6 @@
    "prfnm": "양인모의 베토벤 바이올린 소나타 전곡 Ⅲ",
    "prfpdfrom": "2027.01.24",
    "prfpdto": "2027.01.24",
-   "prfstate": "공연예정",
-   "updated": "2026-11-05"
-  },
-  "PF305564": {
-   "area": "서울특별시",
-   "cast": "김진수, 이수정, 명지영, 이수아 / ",
-   "checked": "2026-11-05",
-   "detail": null,
-   "fcltynm": "일신홀",
-   "first_seen": "2026-11-05",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "베리타스 뮤지케 음악제, TVT와의 국제교류 작품발표회",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
    "prfstate": "공연예정",
    "updated": "2026-11-05"
   },
@@ -15022,21 +14812,6 @@
    "prfpdto": "2026.12.20",
    "prfstate": "공연예정",
    "updated": "2026-11-06"
-  },
-  "PF305698": {
-   "area": "서울특별시",
-   "cast": "황아영, 정찬우, 홍예빈, 이윤서 / ",
-   "checked": "2026-11-10",
-   "detail": null,
-   "fcltynm": "거암아트홀",
-   "first_seen": "2026-11-10",
-   "genrenm": "서양음악(클래식)",
-   "matched": [],
-   "prfnm": "제6회 드로잉더뮤직 음악콩쿠르 대상전",
-   "prfpdfrom": "2026.11.10",
-   "prfpdto": "2026.11.10",
-   "prfstate": "공연완료",
-   "updated": "2026-11-10"
   },
   "PF305699": {
    "area": "서울특별시",
@@ -16273,11 +16048,12 @@
    "matched": [
     "백건우"
    ],
-   "pending_report": true,
+   "pending_report": false,
    "prfnm": "고양월드클래식, 고양-몽펠리에 페스티벌 오케스트라 with 백건우 [고양]",
    "prfpdfrom": "2026.12.19",
    "prfpdto": "2026.12.19",
    "prfstate": "공연예정",
+   "reported": "2026-11-11",
    "updated": "2026-11-10"
   },
   "PF305985": {
