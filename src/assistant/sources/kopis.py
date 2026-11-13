@@ -8,6 +8,8 @@
 - 장부가 있으면 마지막 동기화일 - since_days 이후 등록·수정된 공연만 받는다 (afterdate).
 - 처음 보는 공연만 상세(출연진)를 조회한다. 하루 상한을 넘기면 '미확인' 으로 남겨
   다음 실행에서 이어서 처리한다. 끝난 공연은 장부에서 지운다.
+- 출연진이 비어 있던 공연(공연장이 먼저 등록하고 출연자를 나중에 채우는 경우)은 KOPIS 가
+  수정됐다고 알려주면(증분 목록에 다시 나오면) 상세를 다시 조회한다.
 - 확인한 공연은 출연진 텍스트(cast)도 장부에 남긴다. names 가 바뀌면 API 호출 없이 다시 대조해
   새로 맞는 공연은 상세를 다시 받아 보고 대기로 올린다.
 - names 가 출연하는 공연이 새로 잡히거나 바뀌면 장부에 '보고 대기(pending_report)' 로 표시하고,
@@ -177,6 +179,9 @@ class KopisSource:
                     changed = any(entry.get(f) != perf.get(f, "") for f in LIST_FIELDS)
                     for f in LIST_FIELDS:
                         entry[f] = perf.get(f, "")
+                    if not changed and after is not None and _cast_empty(entry):
+                        # 수정됐는데 목록 정보는 그대로 → 출연진이 채워졌을 수 있다. 다시 본다.
+                        entry.pop("checked", None)
                     if changed or "checked" not in entry:
                         entry["updated"] = today.isoformat()
                         if mt20id not in touched:
@@ -222,11 +227,12 @@ class KopisSource:
                     str(detail.get("prfcast", "")),
                     str(detail.get("prfcrew", "")),
                 )
+                newly_matched = [n for n in matched if n not in entry.get("matched", [])]
                 entry["checked"] = today.isoformat()
                 entry["cast"] = f"{detail.get('prfcast', '')} / {detail.get('prfcrew', '')}"
                 entry["matched"] = matched
                 entry["detail"] = detail if matched else None
-                if matched:
+                if newly_matched:
                     entry["pending_report"] = True
         finally:
             if listing_complete:
@@ -318,6 +324,11 @@ def load_store(path: Path | None, today: date) -> dict:
         for v in store["performances"].values():
             v.pop("ticket_open", None)  # 예전 버전이 웹 검색으로 붙이던 값. 더는 쓰지 않는다
     return store
+
+
+def _cast_empty(entry: dict) -> bool:
+    """확인은 했지만 출연진·제작진 텍스트가 비어 있던 공연인가."""
+    return "checked" in entry and not entry.get("cast", "").replace("/", "").strip()
 
 
 def rematch(performances: dict[str, dict], names: tuple[str, ...]) -> int:
