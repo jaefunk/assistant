@@ -292,7 +292,7 @@ def test_changed_known_performance_is_reported_without_detail_call(tmp_path) -> 
 
 
 def test_updated_performance_with_empty_cast_is_rechecked(tmp_path) -> None:
-    """공연장이 먼저 등록하고 출연자를 나중에 채운 경우: 수정분 목록에 다시 나오면 상세를 다시 본다."""
+    """공연장이 먼저 등록하고 출연자를 나중에 채운 경우: 수정분에 다시 나오면 상세를 다시 본다."""
     store_path = tmp_path / "store.json"
     details = dict(DETAILS, PF2="<dbs><db><mt20id>PF2</mt20id><prfcast></prfcast></db></dbs>")
 
