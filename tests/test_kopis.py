@@ -291,6 +291,72 @@ def test_changed_known_performance_is_reported_without_detail_call(tmp_path) -> 
     assert _detail_requests(requests) == []
 
 
+def test_updated_performance_with_empty_cast_is_rechecked(tmp_path) -> None:
+    """공연장이 먼저 등록하고 출연자를 나중에 채운 경우: 수정분 목록에 다시 나오면 상세를 다시 본다."""
+    store_path = tmp_path / "store.json"
+    details = dict(DETAILS, PF2="<dbs><db><mt20id>PF2</mt20id><prfcast></prfcast></db></dbs>")
+
+    def make_client(requests: list[httpx.Request], list_xml: str) -> httpx.Client:
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if request.url.path.endswith("/pblprfr"):
+                return httpx.Response(200, text=list_xml)
+            return httpx.Response(200, text=details[request.url.path.rsplit("/", 1)[-1]])
+
+        return httpx.Client(transport=httpx.MockTransport(handler))
+
+    # 첫날: PF2 는 출연진이 비어 있어 맞지 않는다
+    items = _source(make_client([], LIST_XML), store_path=store_path).fetch(_spec(), limit=10)
+    assert "KBS교향악단 제832회 정기연주회" not in [i.title for i in _news(items)]
+    store = json.loads(store_path.read_text(encoding="utf-8"))
+    assert store["performances"]["PF2"]["matched"] == []
+
+    # 다음 날: KOPIS 수정분 목록에 PF2 가 (목록 정보는 그대로인 채) 다시 나오고 출연진이 채워짐
+    details["PF2"] = DETAILS["PF2"]
+    only_pf2 = "<dbs>" + LIST_XML.split("<db>")[2].join(["<db>", ""]) + "</dbs>"
+    requests: list[httpx.Request] = []
+    items = _source(
+        make_client(requests, only_pf2), store_path=store_path, today=date(2026, 10, 17)
+    ).fetch(_spec(), limit=10)
+    assert _detail_requests(requests) == ["PF2"]
+    assert [i.title for i in _news(items)] == ["KBS교향악단 제832회 정기연주회"]
+
+    # 그 다음 날 또 수정분에 나와도 출연진이 채워진 뒤라 다시 조회하지 않는다
+    requests = []
+    items = _source(
+        make_client(requests, only_pf2), store_path=store_path, today=date(2026, 10, 18)
+    ).fetch(_spec(), limit=10)
+    assert _detail_requests(requests) == []
+    assert _news(items) == []
+
+
+def test_full_sync_does_not_recheck_empty_cast(tmp_path, monkeypatch) -> None:
+    """전체 동기화는 모든 공연이 목록에 나오므로 '수정됨' 신호가 아니다. 다시 조회하지 않는다."""
+    store_path = tmp_path / "store.json"
+    details = dict(DETAILS, PF3="<dbs><db><mt20id>PF3</mt20id><prfcast></prfcast></db></dbs>")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/pblprfr"):
+            return httpx.Response(200, text=LIST_XML)
+        return httpx.Response(200, text=details[request.url.path.rsplit("/", 1)[-1]])
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    _source(client, store_path=store_path).fetch(_spec(), limit=10)
+    monkeypatch.setenv("KOPIS_FULL_SYNC", "1")
+    requests: list[httpx.Request] = []
+
+    def counting(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return handler(request)
+
+    _source(
+        httpx.Client(transport=httpx.MockTransport(counting)),
+        store_path=store_path,
+        today=date(2026, 10, 17),
+    ).fetch(_spec(), limit=10)
+    assert _detail_requests(requests) == []
+
+
 def test_pending_performances_are_checked_on_next_run(tmp_path) -> None:
     store_path = tmp_path / "store.json"
 
